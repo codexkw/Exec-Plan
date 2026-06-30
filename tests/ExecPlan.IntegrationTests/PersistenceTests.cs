@@ -46,6 +46,25 @@ public class PersistenceTests : IClassFixture<SqliteFixture>
     }
 
     [Fact]
+    public void SaveChanges_sync_stamps_CreatedAtUtc_on_insert()
+    {
+        // Covers the sync SaveChanges(bool) funnel override added alongside the async one, so
+        // CreatedAtUtc stamping behaves identically whether callers save sync or async.
+        var plan = new Plan { Name = "StampedSync", Type = PlanType.Daily, CreatedByUserId = Guid.NewGuid() };
+        var planId = plan.Id;
+        using (var ctx = _fx.NewContext())
+        {
+            ctx.Set<Plan>().Add(plan);
+            ctx.SaveChanges();
+        }
+        using (var ctx = _fx.NewContext())
+        {
+            var saved = ctx.Set<Plan>().Find(planId);
+            saved!.CreatedAtUtc.Should().NotBe(default);
+        }
+    }
+
+    [Fact]
     public async Task Repository_FirstOrDefaultAsync_finds_seeded_row_by_predicate()
     {
         var plan = new Plan { Name = "Findable", Type = PlanType.Guard, CreatedByUserId = Guid.NewGuid() };

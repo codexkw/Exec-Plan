@@ -52,11 +52,18 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
         ["Jwt:RefreshTokenDays"] = "14",
     };
 
+    // Same keys as ConfigOverrides, pre-translated to the env-var form actually set below, so the
+    // constructor and Dispose's cleanup can never drift out of sync with each other.
+    private static readonly string[] EnvVarKeys = ConfigOverrides.Keys
+        .Select(k => k.Replace(':', '_').Replace("_", "__"))
+        .ToArray();
+
     public TestAppFactory()
     {
-        foreach (var (key, value) in ConfigOverrides)
+        var values = ConfigOverrides.Values.ToArray();
+        for (var i = 0; i < EnvVarKeys.Length; i++)
         {
-            Environment.SetEnvironmentVariable(key.Replace(':', '_').Replace("_", "__"), value);
+            Environment.SetEnvironmentVariable(EnvVarKeys[i], values[i]);
         }
 
         _connection = new SqliteConnection("DataSource=:memory:");
@@ -114,6 +121,13 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
         if (disposing)
         {
             _connection.Dispose();
+
+            // Undo the process-global env vars set in the constructor so a later
+            // WebApplicationFactory fixture in the same test run doesn't inherit them.
+            foreach (var envVarKey in EnvVarKeys)
+            {
+                Environment.SetEnvironmentVariable(envVarKey, null);
+            }
         }
     }
 }

@@ -44,7 +44,23 @@ public class ExecPlanDbContext : DbContext
         }
     }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    // DbContext.SaveChanges()/SaveChangesAsync(CancellationToken) both funnel into these two
+    // (bool, [CancellationToken]) overloads, so overriding them here stamps timestamps on every
+    // sync and async save entry point without double-stamping.
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        StampTimestamps();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(
+        bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        StampTimestamps();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    private void StampTimestamps()
     {
         var now = DateTime.UtcNow;
         foreach (var entry in ChangeTracker.Entries<BaseEntity>())
@@ -58,7 +74,5 @@ public class ExecPlanDbContext : DbContext
                 entry.Entity.UpdatedAtUtc = now;
             }
         }
-
-        return base.SaveChangesAsync(cancellationToken);
     }
 }
