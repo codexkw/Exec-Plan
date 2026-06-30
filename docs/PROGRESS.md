@@ -20,6 +20,7 @@ Executing `docs/superpowers/plans/2026-06-30-execplan-backend-spine.md` on branc
 | Date | Task | Done | Commit | Tests |
 |---|---|---|---|---|
 | 2026-06-30 | T1 | Solution scaffold: 5 src + 2 test projects, clean-architecture refs, pinned 9.0.*, secret-safe config, smoke test | `0d4e0aa` | 1/1; build 0 warn/0 err |
+| 2026-06-30 | T2-T4 | Domain layer: BaseEntity + 9 locked enums (T2); template-side entities Organization/Department/User/Plan(+Contacts/Activators)/Team/TeamMembership/ShiftAssignment/TaskTemplate (T3); runtime-snapshot entities PlanActivation/ActivationParticipant/ExecutionTask/NotificationLog/CallAttempt/ResponseStatus/EscalationLog/BroadcastMessage (T4) | `d0bdd04`, `f39d394`, `7a8ce78` | 5/5 unit tests passing (smoke + BaseEntityTests x2 + TemplateGraphTests + RuntimeGraphTests); build 0 warn/0 err |
 
 ## Phase 2 — Web (MVC admin) — not started
 ## Phase 3 — Flutter mobile (separate repo) — not started
