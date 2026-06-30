@@ -1,3 +1,6 @@
+# ── SDD scratch (subagent-driven-development ledger) ───────────────────
+.superpowers/
+
 # ── Secrets — never commit ─────────────────────────────────────────────
 appsettings.Development.json
 appsettings.*.Local.json
