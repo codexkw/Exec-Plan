@@ -299,4 +299,112 @@ public class ExecutionAndBroadcastTests : IClassFixture<SqliteFixture>
         var thrown = await act.Should().ThrowAsync<AppException>();
         thrown.Which.ErrorKind.Should().Be(AppException.Kind.Conflict);
     }
+
+    // --- Negative-authorization gate tests (pin each gate so a future refactor can't silently widen it) ---
+
+    [Fact]
+    public async Task Member_reassigning_a_task_is_Forbidden()
+    {
+        var s = SeedScenario();
+        // memberA1 owns taskA1 (so done/note-only would be allowed) but is a plain member — not a
+        // leader/manager/admin — so any reassign attempt, even within the same team, must be Forbidden.
+        var cur = new FakeCurrentUser { UserId = s.MemberA1Id, Role = UserRole.TeamMember };
+
+        var act = async () =>
+            await NewExecution(cur).UpdateTaskAsync(s.TaskA1Id, done: null, note: null, reassignToParticipantId: s.ParticipantA2Id);
+
+        var thrown = await act.Should().ThrowAsync<AppException>();
+        thrown.Which.ErrorKind.Should().Be(AppException.Kind.Forbidden);
+    }
+
+    [Fact]
+    public async Task SetSubstituteLive_by_non_leading_leader_is_Forbidden()
+    {
+        var s = SeedScenario();
+        // leaderBeta leads Beta, not Alpha — pA1 belongs to Alpha, so leaderBeta must be Forbidden.
+        var cur = new FakeCurrentUser { UserId = s.LeaderBetaId, Role = UserRole.TeamLeader };
+        var substituteUserId = Guid.NewGuid();
+
+        var act = async () =>
+            await NewExecution(cur).SetSubstituteLiveAsync(s.ActivationId, s.ParticipantA1Id, substituteUserId);
+
+        var thrown = await act.Should().ThrowAsync<AppException>();
+        thrown.Which.ErrorKind.Should().Be(AppException.Kind.Forbidden);
+    }
+
+    [Fact]
+    public async Task RaiseIssue_by_member_is_Forbidden()
+    {
+        var s = SeedScenario();
+        var cur = new FakeCurrentUser { UserId = s.MemberA1Id, Role = UserRole.TeamMember };
+
+        var act = async () => await NewExecution(cur).RaiseIssueAsync(s.ActivationId, "radio is down");
+
+        var thrown = await act.Should().ThrowAsync<AppException>();
+        thrown.Which.ErrorKind.Should().Be(AppException.Kind.Forbidden);
+    }
+
+    [Fact]
+    public async Task Broadcast_by_member_is_Forbidden()
+    {
+        var s = SeedScenario();
+        var cur = new FakeCurrentUser { UserId = s.MemberA1Id, Role = UserRole.TeamMember };
+
+        var act = async () => await NewBroadcast(cur).BroadcastAsync(s.ActivationId, "move out");
+
+        var thrown = await act.Should().ThrowAsync<AppException>();
+        thrown.Which.ErrorKind.Should().Be(AppException.Kind.Forbidden);
+    }
+
+    [Fact]
+    public async Task Broadcast_by_leader_is_Forbidden()
+    {
+        var s = SeedScenario();
+        // A team leader has no broadcast authority — only manager/admin does.
+        var cur = new FakeCurrentUser { UserId = s.LeaderAlphaId, Role = UserRole.TeamLeader };
+
+        var act = async () => await NewBroadcast(cur).BroadcastAsync(s.ActivationId, "move out");
+
+        var thrown = await act.Should().ThrowAsync<AppException>();
+        thrown.Which.ErrorKind.Should().Be(AppException.Kind.Forbidden);
+    }
+
+    [Fact]
+    public async Task Close_by_member_is_Forbidden()
+    {
+        var s = SeedScenario();
+        var cur = new FakeCurrentUser { UserId = s.MemberA1Id, Role = UserRole.TeamMember };
+
+        var act = async () => await NewExecution(cur).CloseAsync(s.ActivationId);
+
+        var thrown = await act.Should().ThrowAsync<AppException>();
+        thrown.Which.ErrorKind.Should().Be(AppException.Kind.Forbidden);
+    }
+
+    [Fact]
+    public async Task Close_by_leader_is_Forbidden()
+    {
+        var s = SeedScenario();
+        // A team leader has no close authority — only manager/admin does.
+        var cur = new FakeCurrentUser { UserId = s.LeaderAlphaId, Role = UserRole.TeamLeader };
+
+        var act = async () => await NewExecution(cur).CloseAsync(s.ActivationId);
+
+        var thrown = await act.Should().ThrowAsync<AppException>();
+        thrown.Which.ErrorKind.Should().Be(AppException.Kind.Forbidden);
+    }
+
+    // --- BroadcastService robustness: unknown activation must not orphan a BroadcastMessage ---
+
+    [Fact]
+    public async Task Broadcast_to_unknown_activation_throws_NotFound()
+    {
+        var s = SeedScenario();
+        var cur = new FakeCurrentUser { UserId = s.ManagerId, Role = UserRole.PlanManager };
+
+        var act = async () => await NewBroadcast(cur).BroadcastAsync(Guid.NewGuid(), "move out");
+
+        var thrown = await act.Should().ThrowAsync<AppException>();
+        thrown.Which.ErrorKind.Should().Be(AppException.Kind.NotFound);
+    }
 }

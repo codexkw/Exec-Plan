@@ -42,13 +42,24 @@ public sealed class BroadcastService
             throw AppException.Forbidden("Only a manager or admin may broadcast.");
         }
 
+        if (_cur.UserId is null)
+        {
+            throw AppException.Forbidden("No authenticated sender for this broadcast.");
+        }
+
+        var activation = await _uow.Repo<PlanActivation>().GetByIdAsync(activationId, ct);
+        if (activation is null)
+        {
+            throw AppException.NotFound("Activation not found.");
+        }
+
         var participants = await _uow.Repo<ActivationParticipant>()
             .ListAsync(p => p.ActivationId == activationId, ct);
 
         var message = new BroadcastMessage
         {
             ActivationId = activationId,
-            SenderUserId = _cur.UserId!.Value,
+            SenderUserId = _cur.UserId.Value,
             Body = body,
             CreatedAtUtc = _clock.UtcNow,
         };
