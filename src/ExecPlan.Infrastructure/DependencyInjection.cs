@@ -1,5 +1,6 @@
 using ExecPlan.Application.Abstractions;
 using ExecPlan.Infrastructure.Persistence;
+using ExecPlan.Infrastructure.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,9 +26,10 @@ public static class DependencyInjection
 
         s.AddScoped<IUnitOfWork, UnitOfWork>();
         s.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        s.AddSingleton<IClock, KuwaitClock>();
 
-        // IClock -> KuwaitClock, INotificationProvider/DatabasePlaceholderProvider, and auth
-        // services are registered once those concrete types exist (Task 6, Task 8/9).
+        // INotificationProvider/DatabasePlaceholderProvider and auth services are registered
+        // in later tasks (Task 8/9) once those types exist.
         return s;
     }
 }
