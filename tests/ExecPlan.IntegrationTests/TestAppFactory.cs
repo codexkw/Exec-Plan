@@ -1,4 +1,6 @@
 using System.Data.Common;
+using ExecPlan.Application.Abstractions;
+using ExecPlan.Application.Shifts;
 using ExecPlan.Domain.Entities;
 using ExecPlan.Domain.Enums;
 using ExecPlan.Infrastructure.Auth;
@@ -26,6 +28,20 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
 
     public Guid AdminUserId { get; private set; }
     public Guid AdminOrganizationId { get; } = Guid.NewGuid();
+
+    // Deterministic host clock: a fixed instant that resolves to a known Kuwait shift, so the
+    // activation cycle (which calls KuwaitShiftCalculator.Resolve(IClock.UtcNow)) always rosters
+    // against the same (Band, RosterDate) — tests seed ShiftAssignments aligned to FixedShift below.
+    // 2026-06-30 08:00 UTC = 11:00 Asia/Kuwait → Morning band, roster 2026-06-30. Replaces the
+    // default KuwaitClock in the test host only. JWT expiry uses real DateTime.UtcNow in
+    // JwtTokenFactory (not IClock), so fixing this never invalidates freshly issued tokens.
+    private readonly TestClock _clock = new();
+
+    /// <summary>The fixed instant the host's <see cref="IClock"/> reports (UTC).</summary>
+    public DateTime FixedUtcNow => _clock.UtcNow;
+
+    /// <summary>The Kuwait shift the fixed clock resolves to — seed rosters against this.</summary>
+    public ShiftResolution FixedShift => new KuwaitShiftCalculator().Resolve(_clock.UtcNow);
 
     private readonly DbConnection _connection;
 
@@ -85,6 +101,12 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
             services.RemoveAll<ExecPlanDbContext>();
 
             services.AddDbContext<ExecPlanDbContext>(o => o.UseSqlite(_connection));
+
+            // Replace the default singleton KuwaitClock with the fixed test clock so shift
+            // resolution is deterministic across the whole activation cycle (Escalation:DefaultThreshold
+            // is left untouched at its default 5 — the DI test asserts that value).
+            services.RemoveAll<IClock>();
+            services.AddSingleton<IClock>(_clock);
 
             using var sp = services.BuildServiceProvider();
             using var scope = sp.CreateScope();

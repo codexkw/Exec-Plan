@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using ExecPlan.Api.Auth;
+using ExecPlan.Api.Middleware;
 using ExecPlan.Application;
 using ExecPlan.Application.Abstractions;
 using ExecPlan.Domain.Enums;
@@ -65,6 +66,10 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+
+// Consistent AppException → HTTP mapping for the whole pipeline. Registered before auth so it also
+// wraps the authentication/authorization middleware and any controller-level throws.
+app.UseMiddleware<AppExceptionMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
