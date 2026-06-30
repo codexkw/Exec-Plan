@@ -15,6 +15,13 @@ public interface IRepository<T> where T : BaseEntity
     Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default);
     Task<List<T>> ListAsync(Expression<Func<T, bool>>? predicate = null, CancellationToken ct = default);
 
+    // TRACKED variants: identical filtering, but the returned entities are change-tracked so that
+    // mutating them is persisted by the next SaveChanges. Services that MUTATE many rows (e.g.
+    // escalation) must use these — the no-tracking ListAsync/FirstOrDefaultAsync above would silently
+    // drop the edits. System.Linq.Expressions is BCL, so this stays EF-free in the Application layer.
+    Task<T?> FirstOrDefaultTrackedAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default);
+    Task<List<T>> ListTrackedAsync(Expression<Func<T, bool>>? predicate = null, CancellationToken ct = default);
+
     Task AddAsync(T entity, CancellationToken ct = default);
     Task AddRangeAsync(IEnumerable<T> entities, CancellationToken ct = default);
     void Remove(T entity);

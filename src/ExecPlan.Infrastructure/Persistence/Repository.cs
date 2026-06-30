@@ -31,6 +31,20 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
         return query.ToListAsync(ct);
     }
 
+    public Task<T?> FirstOrDefaultTrackedAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default) =>
+        _db.Set<T>().FirstOrDefaultAsync(predicate, ct);
+
+    public Task<List<T>> ListTrackedAsync(Expression<Func<T, bool>>? predicate = null, CancellationToken ct = default)
+    {
+        var query = _db.Set<T>();
+        if (predicate is not null)
+        {
+            return query.Where(predicate).ToListAsync(ct);
+        }
+
+        return query.ToListAsync(ct);
+    }
+
     public async Task AddAsync(T e, CancellationToken ct = default) => await _db.Set<T>().AddAsync(e, ct);
 
     public async Task AddRangeAsync(IEnumerable<T> e, CancellationToken ct = default) => await _db.Set<T>().AddRangeAsync(e, ct);
