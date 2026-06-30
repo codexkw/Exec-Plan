@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ExecPlan.Api\ExecPlan.Api.csproj" />
+    <ProjectReference Include="..\..\src\ExecPlan.Cli\ExecPlan.Cli.csproj" />
     <ProjectReference Include="..\..\src\ExecPlan.Infrastructure\ExecPlan.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\ExecPlan.Application\ExecPlan.Application.csproj" />
     <ProjectReference Include="..\..\src\ExecPlan.Domain\ExecPlan.Domain.csproj" />
