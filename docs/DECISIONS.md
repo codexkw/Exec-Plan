@@ -16,6 +16,9 @@ Living record of locked architecture/process decisions for the EXECPLAN re-platf
 | DEC-10 | 2026-06-30 | Workspace layout | Parent `ExecPlan/` is a plain container with two sibling repos: `backend/` + `mobile/` | User direction. |
 | DEC-11 | 2026-06-30 | Admin localization | Admin ships **Arabic (default, RTL)** + **English (LTR)** via `RequestLocalization` + culture cookie + `.resx` | PRD §15; user direction. Host infra wired in Phase 1; views in web increment. |
 | DEC-12 | 2026-06-30 | Admin UI theme | **Material Design admin template** (Bootstrap 5-based for RTL); candidate Creative Tim *Material Dashboard 2* (MIT). Assets bundled locally (NFR-6) | User direction. Exact template confirmed at start of web increment. |
+| DEC-13 | 2026-06-30 | Refresh-token persistence boundary | `AuthService` (Application) never references the infra `RefreshToken` entity; it goes through `IRefreshTokenStore` (Application interface) implemented by `RefreshTokenStore` (Infrastructure), which stages rows on the shared UoW. | Preserves Domain←Application←Infrastructure; the plan's "AuthService consumes RefreshToken" would have violated it. |
+| DEC-14 | 2026-06-30 | Async repository queries | `IRepository<T>` gains `FirstOrDefaultAsync(predicate)` and `ListAsync(predicate?)`; EF async lives in the Infrastructure impl. Services filter/read via these (no sync-over-async EF, no EF in Application). Dashboard loads each entity set by activationId and aggregates in memory (also sidesteps cartesian Includes). | Auth review flagged sync-over-async; every service needs async filtered reads. |
+| DEC-15 | 2026-06-30 | Auth controller sequencing | `AuthController` (login/refresh) + a minimal `[Authorize]` diagnostic endpoint are built in the auth wave (with host wiring) so the JWT/cookie pipeline is testable; the CRUD controllers remain in the API wave. | Testability — host wiring needs a real protected endpoint and a login path to exercise. |
 
 ## Open (non-blocking)
 
