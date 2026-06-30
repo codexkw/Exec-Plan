@@ -1,4 +1,6 @@
 using ExecPlan.Application.Abstractions;
+using ExecPlan.Application.Auth;
+using ExecPlan.Infrastructure.Auth;
 using ExecPlan.Infrastructure.Persistence;
 using ExecPlan.Infrastructure.Time;
 using Microsoft.EntityFrameworkCore;
@@ -28,8 +30,23 @@ public static class DependencyInjection
         s.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         s.AddSingleton<IClock, KuwaitClock>();
 
-        // INotificationProvider/DatabasePlaceholderProvider and auth services are registered
-        // in later tasks (Task 8/9) once those types exist.
+        s.AddScoped<IPasswordHasher, IdentityPasswordHasher>();
+        s.AddScoped<IJwtTokenFactory, JwtTokenFactory>();
+        s.AddScoped<IRefreshTokenStore, RefreshTokenStore>();
+        s.AddScoped<IAuthService>(sp =>
+        {
+            var refreshTokenDays = int.TryParse(cfg["Jwt:RefreshTokenDays"], out var days) ? days : 14;
+            return new AuthService(
+                sp.GetRequiredService<IUnitOfWork>(),
+                sp.GetRequiredService<IPasswordHasher>(),
+                sp.GetRequiredService<IJwtTokenFactory>(),
+                sp.GetRequiredService<IRefreshTokenStore>(),
+                sp.GetRequiredService<IClock>(),
+                refreshTokenDays);
+        });
+
+        // INotificationProvider/DatabasePlaceholderProvider are registered in a later task (Task 10)
+        // once those types exist.
         return s;
     }
 }
