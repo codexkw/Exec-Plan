@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using ExecPlan.Api.Auth;
+using ExecPlan.Application;
 using ExecPlan.Application.Abstractions;
 using ExecPlan.Domain.Enums;
 using ExecPlan.Infrastructure;
@@ -11,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddApplication(builder.Configuration);
 
 builder.Services.AddControllers();
 builder.Services.AddControllersWithViews();
