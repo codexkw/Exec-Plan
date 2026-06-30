@@ -42,15 +42,24 @@ MVC admin Razor views/controllers (host + auth wiring only in Phase 1); the Flut
 | DEC-7 | Repos | Backend+MVC → `codexkw/Exec-Plan`. Flutter → `codexkw/Exec-Plan-Flutter` (separate). | Per user direction. |
 | DEC-8 | Keys | `Guid` PKs assigned in entity constructor (`Id = Guid.NewGuid()`). | House style; avoids known EF traps (empty-Guid AddRange collision, tracked-parent collection-nav UPDATE-0-rows). |
 | DEC-9 | Tests | xUnit + FluentAssertions; integration tests on SQLite in-memory (real relational semantics). | Fast, no SQL Server per test run; SQL-Server-specific behavior smoke-tested separately later. |
+| DEC-10 | Workspace layout | Parent `ExecPlan/` is a plain container holding two sibling git repos: `backend/` (→ `Exec-Plan`) and `mobile/` (→ `Exec-Plan-Flutter`). | Per user direction 2026-06-30; keeps backend and Flutter as independent repos under one local folder. |
+| DEC-11 | Admin localization | Admin panel ships **both Arabic (default, RTL) and English (LTR)** via ASP.NET Core `RequestLocalization` + culture cookie; `.resx` resource files, one key set per locale. | PRD §15 Arabic-first + complete English locale; explicit user direction 2026-06-30. |
+| DEC-12 | Admin UI theme | MVC admin uses a **Material Design admin template** (Bootstrap 5-based for built-in RTL), candidate: Creative Tim *Material Dashboard 2* (MIT free) or equivalent. Assets bundled locally (NFR-6, no CDN). | Explicit user direction 2026-06-30. Exact template confirmed at the start of the web increment. |
+
+> **Phasing note for DEC-11/DEC-12.** The localization *infrastructure* (RequestLocalization, supported cultures, culture-cookie endpoint, RTL-aware layout scaffolding) is wired in the Api host during Phase 1. The Material theme integration and the localized Razor **views** are built in the web increment (Phase 2). They are recorded here so the host is set up correctly from the start.
 
 ---
 
 ## 3. Solution topology
 
 ```
-Exec-Plan repo (codexkw/Exec-Plan)
+ExecPlan/                                     ← local container folder (NOT a repo)
+├─ backend/   → repo codexkw/Exec-Plan        ← .NET 9 solution (this spec)
+└─ mobile/    → repo codexkw/Exec-Plan-Flutter ← Flutter app (later increment)
+
+backend/  (repo root = codexkw/Exec-Plan)
   ExecPlan.sln
-  PRD.md, docs/
+  CLAUDE.md, PRD.md, docs/ (incl. DECISIONS.md, PROGRESS.md, this spec)
   src/
     ExecPlan.Domain          entities (15), enums, base types, invariants — no deps
     ExecPlan.Application      services, shift logic, DTOs, INotificationProvider,
@@ -65,8 +74,9 @@ Exec-Plan repo (codexkw/Exec-Plan)
     ExecPlan.UnitTests        pure logic (shift rules, threshold, ranking, guards)
     ExecPlan.IntegrationTests EF + services + API over SQLite in-memory
 
-Exec-Plan-Flutter repo (codexkw/Exec-Plan-Flutter)   ← separate; later increment
-  Flutter app (member / leader / manager flows, SignalR client)
+mobile/  (repo root = codexkw/Exec-Plan-Flutter)   ← separate; later increment
+  CLAUDE.md, docs/ (DECISIONS.md, PROGRESS.md)
+  Flutter app (member / leader / manager flows, SignalR client, ar/en)
 ```
 
 **Dependency rule:** `Domain ← Application ← Infrastructure ← {Api, Cli}`. The Application project references **no EF Core and no SignalR** — it depends only on abstractions (`IUnitOfWork`, repositories, `INotificationProvider`, `IRealtimeNotifier`, `IClock`). This preserves the §17.3 invariant that one service layer drives identical behavior from API, CLI, and any future scheduler.
@@ -166,6 +176,7 @@ Single server-side aggregate (FR-MON-1/2/3): five participant counters (Pending/
 - **`DatabasePlaceholderProvider : INotificationProvider`** stages NotificationLog/CallAttempt rows into the unit of work; one DI line swaps in a real channel later (NFR-7).
 - **`KuwaitClock : IClock`** + `TimeZoneInfo` "Arab Standard Time"/IANA "Asia/Kuwait".
 - **Seeding:** one Organization, a couple of Departments, one user per role (SystemAdmin, PlanManager, TeamLeader, TeamMember), and a showcase Plan with two teams, task templates, and a shift roster including a designated substitute — enough to run the §21 acceptance flow and the eventual drill demo. Seed is idempotent and dev/eval-gated.
+- **Localization (DEC-11), host-level, wired in Phase 1:** `AddLocalization`; `RequestLocalizationOptions` with supported cultures `ar` (default) and `en`; providers ordered cookie → query → accept-language; a `SetLanguage` endpoint writing the `.AspNetCore.Culture` cookie. Layout sets `dir="rtl"` for Arabic / `ltr` for English from the request culture. Strings live in `.resx` resource files (one key set per locale); API validation/error messages are localizable too. The localized Razor views and the Material theme (DEC-12) are built in the web increment.
 
 ---
 
