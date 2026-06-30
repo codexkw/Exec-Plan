@@ -9,6 +9,7 @@ using ExecPlan.Application;
 using ExecPlan.Application.Abstractions;
 using ExecPlan.Domain.Enums;
 using ExecPlan.Infrastructure;
+using ExecPlan.Infrastructure.Seed;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -113,6 +114,15 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
+// Dev/eval-only startup seed (Task 21): a fresh checkout gets one known login per role + a showcase
+// storm-response plan ready to activate. DataSeeder.SeedAsync is itself idempotent (no-ops once any
+// User row exists), so this is safe to run on every Development start; it never runs in Production
+// unless explicitly opted into via Seed:Enabled (e.g. a hosted eval/demo environment).
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Seed:Enabled"))
+{
+    await DataSeeder.SeedAsync(app.Services);
+}
+
 // Consistent AppException → HTTP mapping for the whole pipeline. Registered before auth so it also
 // wraps the authentication/authorization middleware and any controller-level throws.
 app.UseMiddleware<AppExceptionMiddleware>();
@@ -126,6 +136,6 @@ app.UseRequestLocalization();
 app.MapControllers();
 app.MapHub<DashboardHub>("/hubs/dashboard");
 
-app.Run();
+await app.RunAsync();
 
 public partial class Program { }
