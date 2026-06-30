@@ -1,7 +1,9 @@
 using ExecPlan.Application.Abstractions;
 using ExecPlan.Application.Auth;
 using ExecPlan.Infrastructure.Auth;
+using ExecPlan.Infrastructure.Notifications;
 using ExecPlan.Infrastructure.Persistence;
+using ExecPlan.Infrastructure.Realtime;
 using ExecPlan.Infrastructure.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -45,8 +47,9 @@ public static class DependencyInjection
                 refreshTokenDays);
         });
 
-        // INotificationProvider/DatabasePlaceholderProvider are registered in a later task (Task 10)
-        // once those types exist.
+        s.AddScoped<INotificationProvider, DatabasePlaceholderProvider>();
+        s.AddScoped<IRealtimeNotifier, NoOpRealtimeNotifier>();
+
         return s;
     }
 }
