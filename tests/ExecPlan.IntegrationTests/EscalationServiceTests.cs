@@ -138,7 +138,7 @@ public class EscalationServiceTests : IClassFixture<SqliteFixture>
             .Single(p => p.ActivationId == activationId && p.IsSubstitute);
         sub.UserId.Should().Be(s.SubstituteId);
         sub.InductedFromParticipantId.Should().Be(member2Participant.Id);
-        sub.Status.Should().Be(ParticipantStatus.Pending);
+        sub.Status.Should().Be(ParticipantStatus.Inducted); // DEC-16: inducted, not Pending.
         sub.TeamId.Should().Be(s.TeamId);
         sub.TeamNameSnapshot.Should().Be("Alpha");
         sub.ResolvedSubstituteUserId.Should().BeNull();

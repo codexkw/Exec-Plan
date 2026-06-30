@@ -89,7 +89,11 @@ public sealed class EscalationService : IEscalationService
                     UserId = p.ResolvedSubstituteUserId.Value,
                     TeamId = p.TeamId,
                     TeamNameSnapshot = p.TeamNameSnapshot,
-                    Status = ParticipantStatus.Pending,
+                    // DEC-16: an inducted substitute is its own status category (Inducted), not Pending.
+                    // Keeps the dashboard's five counters mutually exclusive (Total = Pending+Ready+
+                    // Escalated+Inducted) and excludes substitutes from re-escalation (the cycle only
+                    // loads Status==Pending). Lifecycle: Inducted → Ready on acknowledge.
+                    Status = ParticipantStatus.Inducted,
                     IsSubstitute = true,
                     InductedFromParticipantId = p.Id,
                     ResolvedSubstituteUserId = null,
