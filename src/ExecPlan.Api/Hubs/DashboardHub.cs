@@ -16,11 +16,14 @@ namespace ExecPlan.Api.Hubs;
 /// <c>DashboardUpdated</c>/<c>ActivationClosed</c> messages to that group after each committed state
 /// change.
 ///
-/// <para><b>Object-level visibility:</b> <see cref="JoinActivation"/> mirrors the REST dashboard gate
-/// (<see cref="ExecPlan.Api.Controllers.ActivationsController.Dashboard"/>, DEC-17): Manager/Admin see
-/// any activation; otherwise the caller must be a participant of the activation OR a TeamLeader of a
-/// team participating in it — else a <see cref="HubException"/> is thrown and the connection is NOT
-/// added to the group.</para>
+/// <para><b>Object-level visibility (dashboard-viewers only, DEC-18 / PRD §14):</b>
+/// <see cref="JoinActivation"/> admits the SAME audience as the REST dashboard gate
+/// (<see cref="ExecPlan.Api.Controllers.ActivationsController.Dashboard"/>, DEC-17) — SystemAdmin/
+/// PlanManager see any activation; a TeamLeader only an activation in which a team they lead
+/// participates. A plain participant who is merely a <c>TeamMember</c> is REJECTED: PRD §14 lists
+/// "View live dashboard: Member –", and the full cross-team <c>DashboardDto</c> pushed to this group
+/// must not leak to members over SignalR when REST already 403s them. Any other caller gets a
+/// <see cref="HubException"/> and the connection is NOT added to the group.</para>
 ///
 /// <para>Identity is read from <see cref="HubCallerContext.User"/> (the authenticated principal on the
 /// connection) rather than the request-scoped <c>ICurrentUser</c>/<c>IHttpContextAccessor</c>, which is
@@ -68,6 +71,14 @@ public sealed class DashboardHub : Hub
             return true;
         }
 
+        // Dashboard-viewers only (DEC-18): a plain TeamMember participant is NOT admitted here, even
+        // though they ARE a participant — PRD §14 ("View live dashboard: Member –"). Only a TeamLeader
+        // of a team participating in the activation may join below.
+        if (role != UserRole.TeamLeader)
+        {
+            return false;
+        }
+
         if (CallerUserId is not Guid userId)
         {
             return false;
@@ -76,24 +87,11 @@ public sealed class DashboardHub : Hub
         var participants = await _uow.Repo<ActivationParticipant>()
             .ListAsync(p => p.ActivationId == activationId, Context.ConnectionAborted);
 
-        // A participant of the activation may view it.
-        if (participants.Any(p => p.UserId == userId))
-        {
-            return true;
-        }
+        // A TeamLeader may view an activation in which a team they lead participates (DEC-17/DEC-18).
+        var teamIds = participants.Select(p => p.TeamId).Distinct().ToList();
+        var teams = await _uow.Repo<Team>()
+            .ListAsync(t => teamIds.Contains(t.Id), Context.ConnectionAborted);
 
-        // A TeamLeader may view an activation in which a team they lead participates (DEC-17).
-        if (role == UserRole.TeamLeader)
-        {
-            var teamIds = participants.Select(p => p.TeamId).Distinct().ToList();
-            var teams = await _uow.Repo<Team>()
-                .ListAsync(t => teamIds.Contains(t.Id), Context.ConnectionAborted);
-            if (teams.Any(t => t.TeamLeaderUserId == userId))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return teams.Any(t => t.TeamLeaderUserId == userId);
     }
 }
