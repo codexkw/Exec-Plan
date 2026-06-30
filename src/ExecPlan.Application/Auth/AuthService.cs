@@ -13,12 +13,19 @@ namespace ExecPlan.Application.Auth;
 /// </summary>
 public sealed class AuthService : IAuthService
 {
+    // Fixed dummy password whose PBKDF2 hash is computed once (lazily, via the injected
+    // IPasswordHasher) and verified against on the "user not found" path of login, so that
+    // unsuccessful logins take roughly the same time whether the username exists or not — this
+    // closes a username-enumeration timing side-channel.
+    private const string DummyPasswordForTimingSafety = "execplan-dummy-password-for-constant-time-auth-failure";
+
     private readonly IUnitOfWork _uow;
     private readonly IPasswordHasher _hasher;
     private readonly IJwtTokenFactory _jwtFactory;
     private readonly IRefreshTokenStore _refreshTokenStore;
     private readonly IClock _clock;
     private readonly int _refreshTokenDays;
+    private readonly Lazy<string> _dummyPasswordHash;
 
     public AuthService(
         IUnitOfWork uow,
@@ -34,16 +41,12 @@ public sealed class AuthService : IAuthService
         _refreshTokenStore = refreshTokenStore;
         _clock = clock;
         _refreshTokenDays = refreshTokenDays;
+        _dummyPasswordHash = new Lazy<string>(() => _hasher.Hash(DummyPasswordForTimingSafety));
     }
 
     public async Task<TokenPair> LoginAsync(string userName, string password, CancellationToken ct = default)
     {
-        var user = FindActiveUserByUserName(userName);
-        if (user is null || !_hasher.Verify(user.PasswordHash, password))
-        {
-            throw AppException.Unauthorized("Invalid username or password.");
-        }
-
+        var user = await AuthenticateAsync(userName, password, ct);
         return await IssueTokenPairAsync(user, ct);
     }
 
@@ -81,15 +84,38 @@ public sealed class AuthService : IAuthService
         return new TokenPair(accessToken, newRefreshValue, accessExpiresUtc, user.Id, user.Role, user.FullName);
     }
 
-    public Task<AppUserPrincipal> ValidateCredentialsAsync(string userName, string password, CancellationToken ct = default)
+    public async Task<AppUserPrincipal> ValidateCredentialsAsync(string userName, string password, CancellationToken ct = default)
     {
-        var user = FindActiveUserByUserName(userName);
-        if (user is null || !_hasher.Verify(user.PasswordHash, password))
+        var user = await AuthenticateAsync(userName, password, ct);
+        return ToPrincipal(user);
+    }
+
+    // Shared credential check for LoginAsync/ValidateCredentialsAsync. Null/empty inputs and an
+    // unknown username both fail uniformly via AppException.Unauthorized — never an unhandled
+    // exception, and never a signal (timing or otherwise) that distinguishes "no such user" from
+    // "wrong password".
+    private async Task<User> AuthenticateAsync(string userName, string password, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(password))
         {
             throw AppException.Unauthorized("Invalid username or password.");
         }
 
-        return Task.FromResult(ToPrincipal(user));
+        var user = await FindActiveUserByUserNameAsync(userName, ct);
+        if (user is null)
+        {
+            // No such active user — still run a real password verification (against a fixed dummy
+            // hash) so this path costs about the same as the "wrong password" path below.
+            _hasher.Verify(_dummyPasswordHash.Value, password);
+            throw AppException.Unauthorized("Invalid username or password.");
+        }
+
+        if (!_hasher.Verify(user.PasswordHash, password))
+        {
+            throw AppException.Unauthorized("Invalid username or password.");
+        }
+
+        return user;
     }
 
     private async Task<TokenPair> IssueTokenPairAsync(User user, CancellationToken ct)
@@ -108,10 +134,10 @@ public sealed class AuthService : IAuthService
         return new TokenPair(accessToken, refreshValue, accessExpiresUtc, user.Id, user.Role, user.FullName);
     }
 
-    // IRepository<T>.Query() returns a plain IQueryable<T> (no EF Core in this project), so this
-    // executes as synchronous LINQ-to-Queryable — fine for a single-row lookup by unique username.
-    private User? FindActiveUserByUserName(string userName) =>
-        _uow.Repo<User>().Query().FirstOrDefault(u => u.UserName == userName && u.IsActive);
+    // IRepository<T>.FirstOrDefaultAsync runs as a genuine async EF query in Infrastructure (no
+    // sync-over-async); Application stays EF-free since the predicate is just System.Linq.Expressions.
+    private Task<User?> FindActiveUserByUserNameAsync(string userName, CancellationToken ct) =>
+        _uow.Repo<User>().FirstOrDefaultAsync(u => u.UserName == userName && u.IsActive, ct);
 
     private static AppUserPrincipal ToPrincipal(User user) => new(user.Id, user.Role, user.FullName, user.UserName);
 

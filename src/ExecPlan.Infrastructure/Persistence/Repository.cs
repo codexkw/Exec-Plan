@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using ExecPlan.Application.Abstractions;
 using ExecPlan.Domain.Common;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,20 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
     public IQueryable<T> Query() => _db.Set<T>().AsNoTracking();
 
     public IQueryable<T> Tracking() => _db.Set<T>();
+
+    public Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default) =>
+        _db.Set<T>().AsNoTracking().FirstOrDefaultAsync(predicate, ct);
+
+    public Task<List<T>> ListAsync(Expression<Func<T, bool>>? predicate = null, CancellationToken ct = default)
+    {
+        var query = _db.Set<T>().AsNoTracking();
+        if (predicate is not null)
+        {
+            query = query.Where(predicate);
+        }
+
+        return query.ToListAsync(ct);
+    }
 
     public async Task AddAsync(T e, CancellationToken ct = default) => await _db.Set<T>().AddAsync(e, ct);
 

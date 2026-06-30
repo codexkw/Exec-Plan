@@ -1,5 +1,6 @@
 using ExecPlan.Domain.Entities;
 using ExecPlan.Domain.Enums;
+using ExecPlan.Infrastructure.Persistence;
 using FluentAssertions;
 
 namespace ExecPlan.IntegrationTests;
@@ -42,5 +43,36 @@ public class PersistenceTests : IClassFixture<SqliteFixture>
             var saved = await ctx.Set<Plan>().FindAsync(planId);
             saved!.CreatedAtUtc.Should().NotBe(default);
         }
+    }
+
+    [Fact]
+    public async Task Repository_FirstOrDefaultAsync_finds_seeded_row_by_predicate()
+    {
+        var plan = new Plan { Name = "Findable", Type = PlanType.Guard, CreatedByUserId = Guid.NewGuid() };
+        await using var ctx = _fx.NewContext();
+        ctx.Set<Plan>().Add(plan);
+        await ctx.SaveChangesAsync();
+
+        var repo = new Repository<Plan>(ctx);
+        var found = await repo.FirstOrDefaultAsync(p => p.Name == "Findable");
+
+        found.Should().NotBeNull();
+        found!.Id.Should().Be(plan.Id);
+    }
+
+    [Fact]
+    public async Task Repository_ListAsync_applies_predicate_and_returns_only_matches()
+    {
+        await using var ctx = _fx.NewContext();
+        ctx.Set<Plan>().Add(new Plan { Name = "ListMatchA", Type = PlanType.Guard, CreatedByUserId = Guid.NewGuid() });
+        ctx.Set<Plan>().Add(new Plan { Name = "ListMatchB", Type = PlanType.Guard, CreatedByUserId = Guid.NewGuid() });
+        ctx.Set<Plan>().Add(new Plan { Name = "ListNoMatch", Type = PlanType.Daily, CreatedByUserId = Guid.NewGuid() });
+        await ctx.SaveChangesAsync();
+
+        var repo = new Repository<Plan>(ctx);
+        var matches = await repo.ListAsync(p => p.Name.StartsWith("ListMatch"));
+
+        matches.Should().HaveCount(2);
+        matches.Select(p => p.Name).Should().BeEquivalentTo("ListMatchA", "ListMatchB");
     }
 }
