@@ -31,14 +31,16 @@ public class AcceptanceFlowTests : IClassFixture<TestAppFactory>
     private sealed record ActivateResponseDto(Guid ActivationId);
 
     private sealed record DashboardSnapshot(
-        Guid ActivationId, int TotalParticipants, int PendingCount, int ReadyCount, int EscalatedCount, int InductedCount);
+        Guid ActivationId, ActivationStatus Status, int TotalParticipants, int PendingCount, int ReadyCount, int EscalatedCount, int InductedCount);
 
     private sealed record EscalationResultDto(int AttemptsAdded, int Inducted);
 
     private sealed record MyTaskDto(Guid Id, Guid ActivationId, Guid ParticipantId, string Title, int Order);
 
+    private sealed record NotificationDto(Guid Id, NotificationKind Kind, string Body, DateTime CreatedAtUtc);
+
     private sealed record Seed(
-        Guid PlanId, string ManagerUserName, string Member1UserName,
+        Guid PlanId, string ManagerUserName, string Member1UserName, string Member2UserName,
         Guid Member1UserId, Guid Member2UserId, Guid SubstituteUserId, Guid TeamId);
 
     private async Task<HttpClient> LoginAsAsync(string userName, string password)
@@ -116,7 +118,7 @@ public class AcceptanceFlowTests : IClassFixture<TestAppFactory>
 
         ctx.SaveChanges();
 
-        return new Seed(plan.Id, manager.UserName, member1.UserName, member1.Id, member2.Id, substitute.Id, team.Id);
+        return new Seed(plan.Id, manager.UserName, member1.UserName, member2.UserName, member1.Id, member2.Id, substitute.Id, team.Id);
     }
 
     [Fact]
@@ -202,26 +204,64 @@ public class AcceptanceFlowTests : IClassFixture<TestAppFactory>
             myTasks!.Select(t => t.Id).Should().NotIntersectWith(member2TaskIds);
         }
 
-        // 7. Manager closes the activation; the returned DashboardDto + a follow-up GET confirm closed.
+        // 7. Manager closes the activation; the returned DashboardDto directly confirms Closed (DEC-17
+        // restored DashboardDto.Status, so this no longer needs a DbContext-scope workaround).
         var closeResponse = await manager.PostAsync($"/api/v1/activations/{activationId}/close", null);
         closeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var closedDash = await closeResponse.Content.ReadFromJsonAsync<DashboardSnapshot>();
         closedDash.Should().NotBeNull();
         closedDash!.ActivationId.Should().Be(activationId);
-
-        using (var closedScope = _factory.Services.CreateScope())
-        {
-            var ctx = closedScope.ServiceProvider.GetRequiredService<ExecPlanDbContext>();
-            var stored = ctx.PlanActivations.Single(a => a.Id == activationId);
-            stored.Status.Should().Be(ActivationStatus.Closed);
-            stored.ClosedAtUtc.Should().NotBeNull();
-        }
+        closedDash.Status.Should().Be(ActivationStatus.Closed);
 
         var afterCloseDash = await manager.GetAsync($"/api/v1/activations/{activationId}/dashboard");
         afterCloseDash.StatusCode.Should().Be(HttpStatusCode.OK);
+        var afterCloseSnapshot = await afterCloseDash.Content.ReadFromJsonAsync<DashboardSnapshot>();
+        afterCloseSnapshot.Should().NotBeNull();
+        afterCloseSnapshot!.Status.Should().Be(ActivationStatus.Closed);
 
         // Re-closing a closed activation is a Conflict — proves the AppException→409 middleware mapping end-to-end.
         var reCloseResponse = await manager.PostAsync($"/api/v1/activations/{activationId}/close", null);
         reCloseResponse.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    /// <summary>
+    /// my-notifications is per-caller (Task 18 follow-up, Minor gap): a broadcast stages one
+    /// <see cref="NotificationLog"/> row per participant, addressed to that participant's own
+    /// <c>RecipientUserId</c>. member1's GET must return member1's row and must NOT leak member2's row
+    /// (and vice versa), even though both originate from the same broadcast body.
+    /// </summary>
+    [Fact]
+    public async Task My_notifications_returns_only_the_callers_own_rows()
+    {
+        var seed = SeedScenario();
+
+        var manager = await LoginAsAsync(seed.ManagerUserName, Password);
+        var activateResponse = await manager.PostAsync($"/api/v1/plans/{seed.PlanId}/activate", null);
+        activateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var activation = await activateResponse.Content.ReadFromJsonAsync<ActivateResponseDto>();
+        var activationId = activation!.ActivationId;
+
+        var broadcastResponse = await manager.PostAsJsonAsync(
+            $"/api/v1/activations/{activationId}/broadcast", new { body = "Move to position" });
+        broadcastResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var member1 = await LoginAsAsync(seed.Member1UserName, Password);
+        var member1Response = await member1.GetAsync($"/api/v1/activations/{activationId}/my-notifications");
+        member1Response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var member1Notifications = await member1Response.Content.ReadFromJsonAsync<List<NotificationDto>>();
+        member1Notifications.Should().NotBeNull();
+        member1Notifications!.Should().ContainSingle(n => n.Body == "Move to position" && n.Kind == NotificationKind.Broadcast);
+
+        var member2 = await LoginAsAsync(seed.Member2UserName, Password);
+        var member2Response = await member2.GetAsync($"/api/v1/activations/{activationId}/my-notifications");
+        member2Response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var member2Notifications = await member2Response.Content.ReadFromJsonAsync<List<NotificationDto>>();
+        member2Notifications.Should().NotBeNull();
+        member2Notifications!.Should().ContainSingle(n => n.Body == "Move to position" && n.Kind == NotificationKind.Broadcast);
+
+        // Isolation: distinct NotificationLog rows (one per participant) — neither list contains the other's.
+        var member1Ids = member1Notifications!.Select(n => n.Id).ToHashSet();
+        var member2Ids = member2Notifications!.Select(n => n.Id).ToHashSet();
+        member1Ids.Should().NotIntersectWith(member2Ids);
     }
 }

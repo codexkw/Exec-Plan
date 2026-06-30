@@ -125,7 +125,8 @@ public sealed class DashboardService : IDashboardService
 
         // 8. Assemble. Pure read — nothing saved.
         return new DashboardDto(
-            activationId, total, pending, ready, escalated, inducted,
+            activationId, activation.Status, activation.Shift, activation.RosterDate,
+            total, pending, ready, escalated, inducted,
             responseRate, taskCompletionRate, teams, overdue, feed);
     }
 }

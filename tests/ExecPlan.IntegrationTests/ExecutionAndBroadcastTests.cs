@@ -278,6 +278,7 @@ public class ExecutionAndBroadcastTests : IClassFixture<SqliteFixture>
 
         snapshot.Should().BeOfType<DashboardDto>();
         snapshot.ActivationId.Should().Be(s.ActivationId);
+        snapshot.Status.Should().Be(ActivationStatus.Closed);
         snapshot.TotalParticipants.Should().Be(3);
 
         await using var ctx = _fx.NewContext();

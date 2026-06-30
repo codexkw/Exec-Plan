@@ -138,6 +138,33 @@ public class DashboardServiceTests : IClassFixture<SqliteFixture>
     }
 
     [Fact]
+    public async Task Snapshot_reflects_activation_status_shift_and_roster_date()
+    {
+        var s = SeedScenario();
+        var activationId = await NewActivationService(threshold: 5).ActivateAsync(s.PlanId, s.ManagerId);
+
+        // Freshly activated: Active, Morning, the seeded roster date (DEC-17 contract restoration).
+        var active = await NewDashboard(MorningUtc).GetSnapshotAsync(activationId);
+        active.Status.Should().Be(ActivationStatus.Active);
+        active.Shift.Should().Be(ShiftBand.Morning);
+        active.RosterDate.Should().Be(RosterDate);
+
+        // After CloseAsync, a fresh GetSnapshotAsync reflects the activation's new Status.
+        var cur = new FakeCurrentUser { UserId = s.ManagerId, Role = UserRole.PlanManager };
+        var executionUow = new UnitOfWork(_fx.NewContext());
+        var execution = new ExecutionService(
+            executionUow, new TestClock { UtcNow = MorningUtc }, cur,
+            new DatabasePlaceholderProvider(executionUow), new NoOpRealtimeNotifier(),
+            NewDashboard(MorningUtc));
+
+        var closedSnapshot = await execution.CloseAsync(activationId);
+        closedSnapshot.Status.Should().Be(ActivationStatus.Closed);
+
+        var freshAfterClose = await NewDashboard(MorningUtc).GetSnapshotAsync(activationId);
+        freshAfterClose.Status.Should().Be(ActivationStatus.Closed);
+    }
+
+    [Fact]
     public async Task Response_and_completion_rates_are_correct()
     {
         var s = SeedScenario();

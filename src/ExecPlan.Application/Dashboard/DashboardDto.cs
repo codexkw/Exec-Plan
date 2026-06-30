@@ -1,3 +1,5 @@
+using ExecPlan.Domain.Enums;
+
 namespace ExecPlan.Application.Dashboard;
 
 /// <summary>
@@ -7,9 +9,16 @@ namespace ExecPlan.Application.Dashboard;
 /// The five participant counters are <b>mutually exclusive</b> (DEC-16): every participant is in exactly
 /// one of <see cref="PendingCount"/>/<see cref="ReadyCount"/>/<see cref="EscalatedCount"/>/
 /// <see cref="InductedCount"/>, so <c>Total == Pending + Ready + Escalated + Inducted</c>.
+///
+/// <see cref="Status"/>/<see cref="Shift"/>/<see cref="RosterDate"/> restore the activation's own
+/// identity to the payload (DEC-17) — so the close summary can show <c>Closed</c> and callers get shift
+/// context without a second round-trip.
 /// </summary>
 public sealed record DashboardDto(
     Guid ActivationId,
+    ActivationStatus Status,
+    ShiftBand Shift,
+    DateTime RosterDate,
     int TotalParticipants,
     int PendingCount,
     int ReadyCount,

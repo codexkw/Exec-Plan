@@ -1,6 +1,7 @@
 using ExecPlan.Api.Auth;
 using ExecPlan.Application.Abstractions;
 using ExecPlan.Application.Broadcast;
+using ExecPlan.Application.Common;
 using ExecPlan.Application.Dashboard;
 using ExecPlan.Application.Escalation;
 using ExecPlan.Application.Execution;
@@ -63,8 +64,26 @@ public sealed class ActivationsController : ControllerBase
 
     [HttpGet("{id:guid}/dashboard")]
     [Authorize(Roles = "SystemAdmin,PlanManager,TeamLeader")]
-    public async Task<ActionResult<DashboardDto>> Dashboard(Guid id, CancellationToken ct) =>
-        Ok(await _dashboard.GetSnapshotAsync(id, ct));
+    public async Task<ActionResult<DashboardDto>> Dashboard(Guid id, CancellationToken ct)
+    {
+        // Manager/Admin see any activation; a TeamLeader is further scoped to activations where they
+        // lead at least one participating team (PRD §14 "own teams" — see DEC-17). IDashboardService
+        // itself stays actor-agnostic (the close summary and manager/admin reads reuse it as-is), so
+        // this object-level check happens here, before the snapshot is computed.
+        if (_cur.Role == UserRole.TeamLeader)
+        {
+            var participants = await _uow.Repo<ActivationParticipant>().ListAsync(p => p.ActivationId == id, ct);
+            var teamIds = participants.Select(p => p.TeamId).Distinct().ToList();
+            var teams = await _uow.Repo<Team>().ListAsync(t => teamIds.Contains(t.Id), ct);
+            var leadsAny = _cur.UserId is not null && teams.Any(t => t.TeamLeaderUserId == _cur.UserId);
+            if (!leadsAny)
+            {
+                throw AppException.Forbidden("You do not lead a team participating in this activation.");
+            }
+        }
+
+        return Ok(await _dashboard.GetSnapshotAsync(id, ct));
+    }
 
     [HttpPost("{id:guid}/acknowledge")]
     [Authorize]
