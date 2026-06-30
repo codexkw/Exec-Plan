@@ -128,6 +128,7 @@ public sealed class EscalationService : IEscalationService
                     ParticipantId = p.Id,
                     SubstituteUserId = sub.UserId,
                     NewParticipantId = sub.Id,
+                    CreatedAtUtc = _clock.UtcNow,
                 };
                 await _uow.Repo<EscalationLog>().AddAsync(log, ct);
                 inducted++;

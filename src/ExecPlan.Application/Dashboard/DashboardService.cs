@@ -25,7 +25,8 @@ public sealed class DashboardService : IDashboardService
 
     public async Task<DashboardDto> GetSnapshotAsync(Guid activationId, CancellationToken ct = default)
     {
-        // 1. Activation must exist. Read-only, so no-tracking is fine throughout.
+        // 1. Activation must exist. The set-loads below (ListAsync) are no-tracking; this is a pure
+        //    read with no mutation/SaveChanges/realtime push.
         var activation = await _uow.Repo<PlanActivation>().GetByIdAsync(activationId, ct);
         if (activation is null)
         {
@@ -103,12 +104,14 @@ public sealed class DashboardService : IDashboardService
             notifications.Count + calls.Count + responses.Count
             + escalations.Count + tasks.Count + broadcasts.Count);
 
-        events.AddRange(notifications.Select(n => new FeedEvent(n.CreatedAtUtc, "notification", n.Body)));
+        // Broadcast notifications are surfaced via the dedicated "broadcast" feed source below, so
+        // exclude their NotificationLog rows here to avoid double-listing them.
+        events.AddRange(notifications
+            .Where(n => n.Kind != NotificationKind.Broadcast)
+            .Select(n => new FeedEvent(n.CreatedAtUtc, "notification", n.Body)));
         events.AddRange(calls.Select(c => new FeedEvent(c.CreatedAtUtc, "call", $"attempt #{c.AttemptNumber}")));
-        events.AddRange(responses.Select(r => new FeedEvent(
-            r.AcknowledgedAtUtc,
-            "response",
-            $"{(userIdByParticipant.TryGetValue(r.ParticipantId, out var ru) ? ru : Guid.Empty)} ready")));
+        // Identity-free text — the raw recipient/user guid is not embedded in the feed.
+        events.AddRange(responses.Select(r => new FeedEvent(r.AcknowledgedAtUtc, "response", "ready")));
         events.AddRange(escalations.Select(e => new FeedEvent(e.CreatedAtUtc, "escalation", "substitute inducted")));
         events.AddRange(tasks
             .Where(t => t.Status == ExecTaskStatus.Done && t.CompletedAtUtc.HasValue)

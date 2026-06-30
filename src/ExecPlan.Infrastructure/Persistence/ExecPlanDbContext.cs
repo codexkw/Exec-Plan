@@ -67,7 +67,13 @@ public class ExecPlanDbContext : DbContext
         {
             if (entry.State == EntityState.Added)
             {
-                entry.Entity.CreatedAtUtc = now;
+                // Only stamp when the service/clock hasn't already set CreatedAtUtc — preserves
+                // deterministic clock-set values (e.g. provider-staged feed rows) instead of
+                // overwriting them with wall-clock time.
+                if (entry.Entity.CreatedAtUtc == default)
+                {
+                    entry.Entity.CreatedAtUtc = now;
+                }
             }
             else if (entry.State == EntityState.Modified)
             {
