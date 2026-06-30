@@ -13,9 +13,13 @@ Dated log of completed work for the backend + MVC admin repo. Append one entry p
 | 2026-06-30 | Locked DEC-10/11/12 (workspace, EN+AR admin, Material theme); updated spec | (this commit) | — |
 | 2026-06-30 | Added CLAUDE.md, DECISIONS.md, PROGRESS.md; working-agreement to keep these current | (this commit) | writing-plans → scaffold |
 
-## Phase 1 — Backend spine (in progress: planning)
+## Phase 1 — Backend spine (in progress)
 
-_Implementation tasks will be appended here as the plan executes (solution scaffold → Domain → Infrastructure/EF → Application services → Auth → API → SignalR → CLI → seeding → tests)._
+Executing `docs/superpowers/plans/2026-06-30-execplan-backend-spine.md` on branch `feat/backend-spine` (subagent-driven, TDD, review gate per task).
+
+| Date | Task | Done | Commit | Tests |
+|---|---|---|---|---|
+| 2026-06-30 | T1 | Solution scaffold: 5 src + 2 test projects, clean-architecture refs, pinned 9.0.*, secret-safe config, smoke test | `0d4e0aa` | 1/1; build 0 warn/0 err |
 
 ## Phase 2 — Web (MVC admin) — not started
 ## Phase 3 — Flutter mobile (separate repo) — not started
