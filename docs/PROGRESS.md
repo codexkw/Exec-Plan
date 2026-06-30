@@ -48,3 +48,4 @@ Executing `docs/superpowers/plans/2026-06-30-execplan-backend-spine.md` on branc
 ## Phase 2 — Web (MVC admin) — not started
 ## Phase 3 — Flutter mobile (separate repo) — not started
 ## Phase 4 — Polish — not started
+| 2026-07-01 | T22 | Whole-branch review (opus) ✅ READY TO MERGE — all invariants verified, PRD §21 met. Cleanups: removed dead IUnitOfWork.BeginTransactionAsync; spec CurrentShift→Resolve; logged tzdata + tenancy deploy notes | (cleanup) | 102/102 |

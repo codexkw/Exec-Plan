@@ -30,3 +30,5 @@ Living record of locked architecture/process decisions for the EXECPLAN re-platf
 - **Q-3** Scheduler technology for timed escalation — deferred; CLI seam ready.
 - **Q-5** Hub scale-out backplane (Redis vs SQL Server) — deferred; single-instance MVP.
 - **DEC-12 follow-up** confirm exact Material template + license at start of the web increment.
+- **DEPLOY gotcha (Docker/Linux)** `KuwaitShiftCalculator` resolves the Asia/Kuwait timezone from the OS tz database. A container built with `DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true` or without `tzdata` (e.g. Alpine) will throw `TypeInitializationException` on first use. The future Dockerfile MUST install `tzdata` (and not set invariant globalization), or add a fixed UTC+3 fallback. Not reachable on the current Windows dev target.
+- **Multi-tenant scoping** Manager/Admin authority over execution ops (dashboard/close/broadcast/escalate/set-substitute) is plan/tenant-global in the spine (DEC-17, internally consistent across REST+hub+services). Add org/tenancy scoping before more than one organization goes to production.

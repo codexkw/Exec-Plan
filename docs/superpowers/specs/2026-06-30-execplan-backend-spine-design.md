@@ -135,7 +135,7 @@ Services depend only on abstractions and complete writes in **one transaction** 
 
 ### 5.2 Shift/roster logic — `KuwaitShiftCalculator` (pure, over `IClock`)
 - Three fixed bands in Asia/Kuwait: Morning 06:00–14:00, Evening 14:00–22:00, Night 22:00–06:00.
-- `CurrentShift(nowUtc)` → (ShiftBand, RosterDate). **Night-after-midnight rule:** a night shift in progress after 00:00 resolves to the **previous Kuwait calendar day's** roster.
+- `Resolve(nowUtc)` → `ShiftResolution(ShiftBand, RosterDate)`. **Night-after-midnight rule:** a night shift in progress after 00:00 resolves to the **previous Kuwait calendar day's** roster.
 - Heavily unit-tested at band boundaries and the midnight rollover.
 
 ### 5.3 ActivationService.Activate(planId, actingUserId)

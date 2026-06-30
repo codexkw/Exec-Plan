@@ -5,6 +5,8 @@ namespace ExecPlan.Application.Abstractions;
 public interface IUnitOfWork
 {
     IRepository<T> Repo<T>() where T : BaseEntity;
+
+    // A single SaveChangesAsync is the unit of atomicity (NFR-8): services stage all rows then save once,
+    // which EF wraps in an implicit transaction. No explicit Begin/Commit is needed at single-instance scale.
     Task<int> SaveChangesAsync(CancellationToken ct = default);
-    Task<IAsyncDisposable> BeginTransactionAsync(CancellationToken ct = default); // no-op-able on Sqlite
 }
