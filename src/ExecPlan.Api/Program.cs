@@ -27,7 +27,10 @@ builder.Services.RemoveAll<IRealtimeNotifier>();
 builder.Services.AddScoped<IRealtimeNotifier, SignalRRealtimeNotifier>();
 
 builder.Services.AddControllers();
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddViewLocalization()
+    .AddDataAnnotationsLocalization(o =>
+        o.DataAnnotationLocalizerProvider = (_, f) => f.Create(typeof(ExecPlan.Api.Resources.SharedResource)));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddSignalR();
@@ -98,8 +101,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     })
     .AddCookie(AuthPolicies.AdminCookieScheme, options =>
     {
-        // Reserved for the future MVC admin area (Task 19+); only the scheme + login path are wired now.
         options.LoginPath = "/admin/login";
+        options.AccessDeniedPath = "/admin/denied";
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.SlidingExpiration = true;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
     });
 
 builder.Services.AddAuthorization(options =>
@@ -136,6 +144,8 @@ app.UseAuthorization();
 app.UseRequestLocalization();
 
 app.MapControllers();
+app.MapControllerRoute("adminArea", "{area:exists}/{controller=Home}/{action=Index}/{id?}");
+app.MapGet("/", ctx => { ctx.Response.Redirect("/admin"); return Task.CompletedTask; });
 app.MapHub<DashboardHub>("/hubs/dashboard");
 
 await app.RunAsync();

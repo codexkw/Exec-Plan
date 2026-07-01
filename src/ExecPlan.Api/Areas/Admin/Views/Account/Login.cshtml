@@ -1,0 +1,16 @@
+@model ExecPlan.Api.Areas.Admin.Models.LoginVm
+<div class="row justify-content-center"><div class="col-md-4">
+  <div class="ep-card p-4 mt-5">
+    <h1 class="h4 mb-3">@Localizer["Login.Title"]</h1>
+    @if (!string.IsNullOrEmpty(Model.Error)) { <div class="alert alert-danger">@Localizer[Model.Error]</div> }
+    <form method="post" action="/admin/login">
+      @Html.AntiForgeryToken()
+      <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl"/>
+      <div class="mb-3"><label class="form-label">@Localizer["Login.UserName"]</label>
+        <input class="form-control" name="UserName" autofocus required/></div>
+      <div class="mb-3"><label class="form-label">@Localizer["Login.Password"]</label>
+        <input class="form-control" type="password" name="Password" required/></div>
+      <button class="btn btn-primary ep-primary w-100" type="submit">@Localizer["Login.Submit"]</button>
+    </form>
+  </div>
+</div></div>
