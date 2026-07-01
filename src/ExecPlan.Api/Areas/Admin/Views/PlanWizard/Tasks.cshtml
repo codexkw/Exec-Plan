@@ -1,0 +1,63 @@
+@model ExecPlan.Api.Areas.Admin.Models.WizardTasksVm
+<h1 class="h4 mb-3">@Localizer["Plans.New"]</h1>
+<partial name="_Steps" />
+
+<h2 class="h5">@Localizer["Plans.Tasks"]</h2>
+@if (!Model.Teams.Any())
+{
+  <p class="text-muted">@Localizer["Plans.NoTeams"]</p>
+}
+else
+{
+  @foreach (var team in Model.Teams)
+  {
+    <div class="ep-card p-3 mb-3">
+      <h3 class="h6">@team.TeamName</h3>
+      @if (!team.Tasks.Any())
+      {
+        <p class="text-muted">@Localizer["Tasks.NoTasks"]</p>
+      }
+      else
+      {
+        <ul>
+          @foreach (var task in team.Tasks)
+          {
+            <li>@task.Order. @task.Title (@task.DurationMinutes @Localizer["Tasks.MinutesShort"])</li>
+          }
+        </ul>
+      }
+
+      <form method="post" action="/admin/plans/create/@Model.PlanId/tasks" class="row g-2 align-items-end">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="intent" value="add"/>
+        <input type="hidden" name="TeamId" value="@team.TeamId"/>
+        <div class="col-auto">
+          <label class="form-label">@Localizer["Tasks.Title"]</label>
+          <input class="form-control" name="Title" required/>
+        </div>
+        <div class="col-auto">
+          <label class="form-label">@Localizer["Tasks.Order"]</label>
+          <input class="form-control" type="number" name="Order" value="@(team.Tasks.Count + 1)"/>
+        </div>
+        <div class="col-auto">
+          <label class="form-label">@Localizer["Tasks.DurationMinutes"]</label>
+          <input class="form-control" type="number" name="DurationMinutes" min="1" required/>
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-outline-primary" type="submit">@Localizer["Tasks.Add"]</button>
+        </div>
+      </form>
+    </div>
+  }
+}
+
+@if (ViewData["tasksBlocked"] is string blockedMessage)
+{
+  <div class="alert alert-warning">@blockedMessage</div>
+}
+
+<form method="post" action="/admin/plans/create/@Model.PlanId/tasks">
+  @Html.AntiForgeryToken()
+  <input type="hidden" name="intent" value="next"/>
+  <button class="btn btn-primary ep-primary" type="submit">@Localizer["Wizard.Next"]</button>
+</form>

@@ -292,6 +292,27 @@
   <data name="Teams.AtLeastOneRequired" xml:space="preserve">
     <value>Add at least one team with at least one member before continuing.</value>
   </data>
+  <data name="Tasks.Title" xml:space="preserve">
+    <value>Task title</value>
+  </data>
+  <data name="Tasks.Order" xml:space="preserve">
+    <value>Order</value>
+  </data>
+  <data name="Tasks.DurationMinutes" xml:space="preserve">
+    <value>Duration (minutes)</value>
+  </data>
+  <data name="Tasks.MinutesShort" xml:space="preserve">
+    <value>min</value>
+  </data>
+  <data name="Tasks.Add" xml:space="preserve">
+    <value>Add task</value>
+  </data>
+  <data name="Tasks.NoTasks" xml:space="preserve">
+    <value>No tasks yet</value>
+  </data>
+  <data name="Tasks.AtLeastOneRequired" xml:space="preserve">
+    <value>Add at least one task to at least one team before continuing.</value>
+  </data>
   <data name="Dash.Total" xml:space="preserve">
     <value>Total</value>
   </data>

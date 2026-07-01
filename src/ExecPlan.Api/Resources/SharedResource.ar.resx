@@ -292,6 +292,27 @@
   <data name="Teams.AtLeastOneRequired" xml:space="preserve">
     <value>أضف فريقاً واحداً على الأقل يحتوي على عضو واحد على الأقل قبل المتابعة.</value>
   </data>
+  <data name="Tasks.Title" xml:space="preserve">
+    <value>عنوان المهمة</value>
+  </data>
+  <data name="Tasks.Order" xml:space="preserve">
+    <value>الترتيب</value>
+  </data>
+  <data name="Tasks.DurationMinutes" xml:space="preserve">
+    <value>المدة (بالدقائق)</value>
+  </data>
+  <data name="Tasks.MinutesShort" xml:space="preserve">
+    <value>د</value>
+  </data>
+  <data name="Tasks.Add" xml:space="preserve">
+    <value>إضافة مهمة</value>
+  </data>
+  <data name="Tasks.NoTasks" xml:space="preserve">
+    <value>لا توجد مهام بعد</value>
+  </data>
+  <data name="Tasks.AtLeastOneRequired" xml:space="preserve">
+    <value>أضف مهمة واحدة على الأقل لفريق واحد على الأقل قبل المتابعة.</value>
+  </data>
   <data name="Dash.Total" xml:space="preserve">
     <value>الإجمالي</value>
   </data>

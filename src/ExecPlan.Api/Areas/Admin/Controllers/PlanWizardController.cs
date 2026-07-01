@@ -14,8 +14,9 @@ namespace ExecPlan.Api.Areas.Admin.Controllers;
 /// Server-incremental create-plan wizard for the MVC admin area. Each step commits straight to the DB
 /// against a <see cref="Plan"/> that starts life as a <see cref="PlanStatus.Draft"/> — so the wizard is
 /// resumable/refresh-safe across steps instead of holding unsaved state in the browser. Task 9 wired
-/// <see cref="Info"/> (step 1: plan info -> Draft); this task (10) adds <see cref="Teams"/> (step 2:
-/// teams &amp; members) onto the same <c>{id}</c>; Tasks 11-12 add tasks/review. Class gate is
+/// <see cref="Info"/> (step 1: plan info -> Draft); Task 10 added <see cref="Teams(Guid, CancellationToken)"/>
+/// (step 2: teams &amp; members); this task (11) adds <see cref="Tasks(Guid, CancellationToken)"/> (step 3:
+/// task templates per team) onto the same <c>{id}</c>; Task 12 adds review. Class gate is
 /// <see cref="AuthPolicies.ManagerOrAdmin"/>.
 /// </summary>
 [Area("Admin")]
@@ -206,6 +207,117 @@ public sealed class PlanWizardController : Controller
                     Name = t.Name,
                     TeamLeaderUserId = t.TeamLeaderUserId,
                     MemberUserIds = memberships.Where(m => m.TeamId == t.Id).Select(m => m.UserId).ToList(),
+                })
+                .ToList(),
+        };
+    }
+
+    [HttpGet("{id:guid}/tasks")]
+    public async Task<IActionResult> Tasks(Guid id, CancellationToken ct)
+    {
+        var (plan, shortCircuit) = await LoadDraftForEditAsync(id, ct);
+        if (shortCircuit is not null)
+        {
+            return shortCircuit;
+        }
+
+        ViewData["step"] = 3;
+        return View(await BuildTasksVmAsync(plan!.Id, ct));
+    }
+
+    /// <summary>
+    /// Two submit intents, same convention as <see cref="Teams(Guid, string, TeamInput, CancellationToken)"/>:
+    /// <c>intent=add</c> adds one <see cref="TaskTemplate"/> to the team named by <paramref name="teamId"/>
+    /// (a hidden field on that team's own add-task form in <c>Tasks.cshtml</c> — re-checked against this
+    /// draft's own teams so a crafted <c>teamId</c> can't attach a task to a team on someone else's plan)
+    /// in a single <see cref="IUnitOfWork.SaveChangesAsync"/>, then re-renders step 3 with the new task now
+    /// listed; posting "add" again layers on another task, against the same or a different team, across as
+    /// many posts as needed. <c>intent=next</c> only advances to <c>/review</c> once at least one of the
+    /// draft's teams has at least one task — server-side, so a crafted/replayed request can't skip it —
+    /// otherwise it re-renders step 3 with an inline message.
+    /// </summary>
+    [HttpPost("{id:guid}/tasks")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Tasks(Guid id, string intent, Guid teamId, TaskInput input, CancellationToken ct)
+    {
+        var (plan, shortCircuit) = await LoadDraftForEditAsync(id, ct);
+        if (shortCircuit is not null)
+        {
+            return shortCircuit;
+        }
+
+        var planId = plan!.Id;
+        ViewData["step"] = 3;
+
+        if (intent == "add")
+        {
+            var team = await _uow.Repo<Team>().FirstOrDefaultAsync(t => t.Id == teamId && t.PlanId == planId, ct);
+            if (team is null)
+            {
+                return NotFound();
+            }
+
+            if (string.IsNullOrWhiteSpace(input.Title))
+            {
+                ModelState.AddModelError(nameof(input.Title), "required");
+                return View(await BuildTasksVmAsync(planId, ct));
+            }
+
+            var template = new TaskTemplate
+            {
+                TeamId = teamId,
+                Title = input.Title,
+                Order = input.Order,
+                Duration = TimeSpan.FromMinutes(input.DurationMinutes),
+            };
+            await _uow.Repo<TaskTemplate>().AddAsync(template, ct);
+
+            await _uow.SaveChangesAsync(ct);
+            return View(await BuildTasksVmAsync(planId, ct));
+        }
+
+        // intent == "next": at least one team must have at least one task for this draft.
+        var teams = await _uow.Repo<Team>().ListAsync(t => t.PlanId == planId, ct);
+        var teamIds = teams.Select(t => t.Id).ToList();
+        var templates = await _uow.Repo<TaskTemplate>().ListAsync(t => teamIds.Contains(t.TeamId), ct);
+
+        if (templates.Count == 0)
+        {
+            ViewData["tasksBlocked"] = _localizer["Tasks.AtLeastOneRequired"].Value;
+            return View(await BuildTasksVmAsync(planId, ct));
+        }
+
+        return Redirect($"/admin/plans/create/{planId}/review");
+    }
+
+    /// <summary>Assembles <see cref="WizardTasksVm"/> from the draft's current DB state: every team of
+    /// the plan, each carrying its own already-persisted <see cref="TaskTemplate"/> rows ordered by
+    /// <see cref="TaskTemplate.Order"/>.</summary>
+    private async Task<WizardTasksVm> BuildTasksVmAsync(Guid planId, CancellationToken ct)
+    {
+        var teams = await _uow.Repo<Team>().ListAsync(t => t.PlanId == planId, ct);
+        var teamIds = teams.Select(t => t.Id).ToList();
+        var templates = await _uow.Repo<TaskTemplate>().ListAsync(t => teamIds.Contains(t.TeamId), ct);
+
+        return new WizardTasksVm
+        {
+            PlanId = planId,
+            Teams = teams
+                .OrderBy(t => t.Name)
+                .Select(t => new TeamTasks
+                {
+                    TeamId = t.Id,
+                    TeamName = t.Name,
+                    Tasks = templates
+                        .Where(tt => tt.TeamId == t.Id)
+                        .OrderBy(tt => tt.Order)
+                        .Select(tt => new TaskInput
+                        {
+                            Title = tt.Title,
+                            Order = tt.Order,
+                            DurationMinutes = (int)tt.Duration.TotalMinutes,
+                        })
+                        .ToList(),
                 })
                 .ToList(),
         };
