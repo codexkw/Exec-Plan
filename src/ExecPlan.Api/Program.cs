@@ -127,6 +127,8 @@ if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Seed:En
 // wraps the authentication/authorization middleware and any controller-level throws.
 app.UseMiddleware<AppExceptionMiddleware>();
 
+app.UseStaticFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
 

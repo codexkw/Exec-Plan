@@ -1,0 +1,21 @@
+:root{
+  --ep-navy:#0d2440; --ep-navy-2:#123157; --ep-amber:#f6a609; --ep-amber-d:#d98e00;
+  --ep-green:#1f9d55; --ep-red:#d64545; --ep-ink:#1b2430; --ep-muted:#6b7686; --ep-surface:#f5f7fa;
+}
+@font-face{font-family:'IBM Plex Sans Arabic';font-weight:400;font-display:swap;src:url('/fonts/IBMPlexSansArabic-Regular.woff2') format('woff2');}
+@font-face{font-family:'IBM Plex Sans Arabic';font-weight:500;font-display:swap;src:url('/fonts/IBMPlexSansArabic-Medium.woff2') format('woff2');}
+@font-face{font-family:'IBM Plex Sans Arabic';font-weight:600;font-display:swap;src:url('/fonts/IBMPlexSansArabic-SemiBold.woff2') format('woff2');}
+body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;background:var(--ep-surface);color:var(--ep-ink);}
+.ep-navbar{background:var(--ep-navy);color:#fff;}
+.ep-sidebar{background:var(--ep-navy-2);color:#dbe4f0;min-height:calc(100vh - 56px);}
+.ep-sidebar a{color:#dbe4f0;text-decoration:none;display:block;padding:.75rem 1rem;border-radius:.5rem;}
+.ep-sidebar a:hover,.ep-sidebar a.active{background:rgba(255,255,255,.12);color:#fff;}
+.ep-card{background:#fff;border:0;border-radius:.75rem;box-shadow:0 2px 8px rgba(13,36,64,.08);}
+.ep-primary{font-size:1.15rem;padding:.9rem 1.6rem;border-radius:.6rem;min-height:52px;}
+.btn-launch{background:var(--ep-amber);border-color:var(--ep-amber-d);color:#1b2430;font-weight:600;font-size:1.35rem;padding:1.1rem 2rem;min-height:64px;border-radius:.75rem;}
+.btn-launch:hover{background:var(--ep-amber-d);}
+.badge-ready{background:var(--ep-green);color:#fff;} .badge-escalated,.badge-overdue{background:var(--ep-red);color:#fff;}
+.badge-draft{background:transparent;border:1px solid var(--ep-amber-d);color:var(--ep-amber-d);}
+.counter-tile{border-radius:.75rem;padding:1rem;text-align:center;background:#fff;box-shadow:0 2px 8px rgba(13,36,64,.08);}
+.counter-tile .n{font-size:2rem;font-weight:600;line-height:1;} .counter-tile.ready .n{color:var(--ep-green);} .counter-tile.escalated .n{color:var(--ep-red);}
+[dir="rtl"] body{letter-spacing:normal;}
