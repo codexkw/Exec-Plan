@@ -27,6 +27,15 @@ public interface IRepository<T> where T : BaseEntity
     // so this stays EF-free here; the EF CountAsync implementation lives in Infrastructure's Repository<T>.
     Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null, CancellationToken ct = default);
 
+    // No-tracking "top N by <orderByDescending>" — ordered AND limited SERVER-SIDE (ORDER BY … DESC / TOP),
+    // so a bounded "recent N" read (e.g. the admin dashboard's recent-activations list) never materializes a
+    // whole, ever-growing table just to keep a handful of rows. Expression is BCL → stays EF-free here.
+    Task<List<T>> ListRecentAsync<TKey>(
+        Expression<Func<T, TKey>> orderByDescending,
+        int take,
+        Expression<Func<T, bool>>? predicate = null,
+        CancellationToken ct = default);
+
     Task AddAsync(T entity, CancellationToken ct = default);
     Task AddRangeAsync(IEnumerable<T> entities, CancellationToken ct = default);
     void Remove(T entity);

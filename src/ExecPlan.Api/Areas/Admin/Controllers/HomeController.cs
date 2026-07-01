@@ -12,9 +12,10 @@ namespace ExecPlan.Api.Areas.Admin.Controllers;
 /// Role landing page for <c>/admin</c>. SystemAdmin/PlanManager get the operational <b>dashboard</b>
 /// (KPI tiles + readiness pulse + recent activations); a TeamLeader is redirected to their own activation
 /// landing (<c>/admin/activations</c>); anyone else back to login. The dashboard is assembled in-process
-/// from <see cref="IUnitOfWork"/> (never admin → HTTP → API), using <c>CountAsync</c> for the pure counts
-/// and the codebase's accepted "load Active + aggregate in memory" pattern (see PlansController.Index) for
-/// the readiness pulse and the recent list — both bounded to small working sets at this scale.
+/// from <see cref="IUnitOfWork"/> (never admin → HTTP → API): <c>CountAsync</c> for the pure counts, a
+/// filtered <c>ListAsync(Active)</c> for the readiness pulse (bounded by the number of currently-Active
+/// activations, not the full history), and a server-side ordered/limited <c>ListRecentAsync</c> for the
+/// recent list — so no query ever materializes the ever-growing <see cref="PlanActivation"/> table.
 /// </summary>
 [Area("Admin")]
 [Route("admin")]
@@ -24,13 +25,8 @@ public sealed class HomeController : Controller
     private const int RecentCount = 6;
 
     private readonly IUnitOfWork _uow;
-    private readonly ICurrentUser _me;
 
-    public HomeController(IUnitOfWork uow, ICurrentUser me)
-    {
-        _uow = uow;
-        _me = me;
-    }
+    public HomeController(IUnitOfWork uow) => _uow = uow;
 
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
@@ -53,20 +49,19 @@ public sealed class HomeController : Controller
         var organizationsTotal = await _uow.Repo<Organization>().CountAsync(ct: ct);
         var teamsTotal = await _uow.Repo<Team>().CountAsync(ct: ct);
 
-        // One read of the activations table; derive both the active set (for the readiness pulse) and the
-        // recent list from it, so this touches the table once.
-        var activations = await _uow.Repo<PlanActivation>().ListAsync(null, ct);
-        var activeActivations = activations.Where(a => a.Status == ActivationStatus.Active).ToList();
+        // Readiness pulse: only the currently-Active activations (a small, bounded working set), plus their
+        // participants. Recent list: the top-N most recently activated, ordered + limited server-side.
+        // Neither materializes the full (ever-growing) PlanActivation history.
+        var activeActivations = await _uow.Repo<PlanActivation>()
+            .ListAsync(a => a.Status == ActivationStatus.Active, ct);
         var activeIds = activeActivations.Select(a => a.Id).ToHashSet();
 
         var participants = activeIds.Count == 0
             ? new List<ActivationParticipant>()
             : await _uow.Repo<ActivationParticipant>().ListAsync(p => activeIds.Contains(p.ActivationId), ct);
 
-        var recent = activations
-            .OrderByDescending(a => a.ActivatedAtUtc)
-            .Take(RecentCount)
-            .ToList();
+        var recent = await _uow.Repo<PlanActivation>()
+            .ListRecentAsync(a => a.ActivatedAtUtc, RecentCount, null, ct);
         var recentPlanIds = recent.Select(a => a.PlanId).Distinct().ToList();
         var recentPlans = recentPlanIds.Count == 0
             ? new List<Plan>()
