@@ -202,6 +202,63 @@
   <data name="Plans.ActivateConfirm" xml:space="preserve">
     <value>هل أنت متأكد من تفعيل هذه الخطة؟</value>
   </data>
+  <data name="Plans.Status" xml:space="preserve">
+    <value>الحالة</value>
+  </data>
+  <data name="Plans.Objective" xml:space="preserve">
+    <value>الهدف</value>
+  </data>
+  <data name="Plans.Description" xml:space="preserve">
+    <value>الوصف</value>
+  </data>
+  <data name="Plans.Scope" xml:space="preserve">
+    <value>النطاق</value>
+  </data>
+  <data name="Plans.Teams" xml:space="preserve">
+    <value>الفرق</value>
+  </data>
+  <data name="Plans.Members" xml:space="preserve">
+    <value>الأعضاء</value>
+  </data>
+  <data name="Plans.Tasks" xml:space="preserve">
+    <value>المهام</value>
+  </data>
+  <data name="Plans.NoTeams" xml:space="preserve">
+    <value>لا توجد فرق بعد</value>
+  </data>
+  <data name="Plans.NoPlans" xml:space="preserve">
+    <value>لا توجد خطط بعد</value>
+  </data>
+  <data name="Plans.WatchDashboard" xml:space="preserve">
+    <value>مشاهدة اللوحة</value>
+  </data>
+  <data name="PlanType.Daily" xml:space="preserve">
+    <value>يومية</value>
+  </data>
+  <data name="PlanType.Weekly" xml:space="preserve">
+    <value>أسبوعية</value>
+  </data>
+  <data name="PlanType.Emergency" xml:space="preserve">
+    <value>طوارئ</value>
+  </data>
+  <data name="PlanType.Guard" xml:space="preserve">
+    <value>حراسة</value>
+  </data>
+  <data name="PlanType.Transport" xml:space="preserve">
+    <value>نقل</value>
+  </data>
+  <data name="PlanType.Maintenance" xml:space="preserve">
+    <value>صيانة</value>
+  </data>
+  <data name="PlanType.It" xml:space="preserve">
+    <value>تقنية المعلومات</value>
+  </data>
+  <data name="PlanType.Inspection" xml:space="preserve">
+    <value>تفتيش</value>
+  </data>
+  <data name="PlanType.General" xml:space="preserve">
+    <value>عامة</value>
+  </data>
   <data name="Wizard.Step1" xml:space="preserve">
     <value>معلومات الخطة</value>
   </data>

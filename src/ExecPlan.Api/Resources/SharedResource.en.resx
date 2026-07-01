@@ -202,6 +202,63 @@
   <data name="Plans.ActivateConfirm" xml:space="preserve">
     <value>Are you sure you want to activate this plan?</value>
   </data>
+  <data name="Plans.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Plans.Objective" xml:space="preserve">
+    <value>Objective</value>
+  </data>
+  <data name="Plans.Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Plans.Scope" xml:space="preserve">
+    <value>Scope</value>
+  </data>
+  <data name="Plans.Teams" xml:space="preserve">
+    <value>Teams</value>
+  </data>
+  <data name="Plans.Members" xml:space="preserve">
+    <value>Members</value>
+  </data>
+  <data name="Plans.Tasks" xml:space="preserve">
+    <value>Tasks</value>
+  </data>
+  <data name="Plans.NoTeams" xml:space="preserve">
+    <value>No teams yet</value>
+  </data>
+  <data name="Plans.NoPlans" xml:space="preserve">
+    <value>No plans yet</value>
+  </data>
+  <data name="Plans.WatchDashboard" xml:space="preserve">
+    <value>Watch dashboard</value>
+  </data>
+  <data name="PlanType.Daily" xml:space="preserve">
+    <value>Daily</value>
+  </data>
+  <data name="PlanType.Weekly" xml:space="preserve">
+    <value>Weekly</value>
+  </data>
+  <data name="PlanType.Emergency" xml:space="preserve">
+    <value>Emergency</value>
+  </data>
+  <data name="PlanType.Guard" xml:space="preserve">
+    <value>Guard</value>
+  </data>
+  <data name="PlanType.Transport" xml:space="preserve">
+    <value>Transport</value>
+  </data>
+  <data name="PlanType.Maintenance" xml:space="preserve">
+    <value>Maintenance</value>
+  </data>
+  <data name="PlanType.It" xml:space="preserve">
+    <value>IT</value>
+  </data>
+  <data name="PlanType.Inspection" xml:space="preserve">
+    <value>Inspection</value>
+  </data>
+  <data name="PlanType.General" xml:space="preserve">
+    <value>General</value>
+  </data>
   <data name="Wizard.Step1" xml:space="preserve">
     <value>Plan information</value>
   </data>
