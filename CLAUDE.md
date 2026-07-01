@@ -12,6 +12,8 @@ Guidance for Claude Code (and any contributor) working in this repository.
 
 This repo is the **backend + MVC admin**. The Flutter mobile app is a **separate repo**: `codexkw/Exec-Plan-Flutter` (locally at `../mobile`).
 
+**Phase 2 (MVC admin panel) is implemented** — all 8 PRD §16 screens (login, users, departments, organizations, plans list/detail, create-plan wizard, live dashboard + summary) live under `Areas/Admin` in `ExecPlan.Api`, routed at `/admin/*`. Cookie sign-in is at `/admin/login`; ar (RTL) is the default culture with an en (LTR) toggle; all CSS/JS/fonts/SignalR client are self-hosted under `wwwroot/` (no CDN, NFR-6). Non-prod demo accounts are seeded per DEC-19 (`admin`/`manager`/`leader`/`member`/`substitute`, shared password `Passw0rd!`) — see `docs/DECISIONS.md` DEC-20..27 and `docs/superpowers/specs/2026-07-01-execplan-web-admin-design.md` for the design.
+
 ## Stack & architecture
 
 - **.NET 9**, single ASP.NET Core host = **MVC admin (cookie auth)** + **REST `/api/v1` (JWT access+refresh)** + **in-process SignalR `DashboardHub`**.
@@ -48,6 +50,8 @@ If a task is left incomplete, record the partial state and the next step in `doc
 dotnet build ExecPlan.sln
 dotnet test                                   # xUnit + FluentAssertions (SQLite in-memory)
 dotnet run --project src/ExecPlan.Api         # host: MVC admin + REST + SignalR
+                                               #   browse http://localhost:5080/admin/login (ar default, RTL)
+                                               #   Development/Seed:Enabled seeds demo accounts, e.g. manager/Passw0rd!
 dotnet run --project src/ExecPlan.Cli -- run-escalation --activation <id>
 dotnet ef migrations add <Name> -p src/ExecPlan.Infrastructure -s src/ExecPlan.Api
 dotnet ef database update          -p src/ExecPlan.Infrastructure -s src/ExecPlan.Api
