@@ -56,3 +56,9 @@ Thumbs.db
 ehthumbs.db
 desktop.ini
 .DS_Store
+
+# Production secrets (server-only; never committed)
+appsettings.Production.json
+
+# VS publish profiles: the .user sibling stores the saved deploy password (never commit)
+**/PublishProfiles/*.pubxml.user

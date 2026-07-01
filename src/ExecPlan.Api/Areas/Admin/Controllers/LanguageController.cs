@@ -1,3 +1,4 @@
+using ExecPlan.Api.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,12 +13,24 @@ namespace ExecPlan.Api.Areas.Admin.Controllers;
 /// <c>Program.cs</c>'s <c>RequestLocalizationOptions.RequestCultureProviders</c> so it alone determines
 /// the resolved culture on every subsequent request.
 /// </summary>
+/// <remarks>
+/// <c>[ResolveCookieUser]</c> is deliberate and load-bearing: the host's DEFAULT authentication scheme is
+/// JWT (for the <c>/api</c> surface), so <c>UseAuthentication()</c> alone leaves <c>HttpContext.User</c>
+/// anonymous on this POST. Meanwhile the antiforgery token embedded in the layout's toggle form is minted
+/// on cookie-authenticated pages (which carry <c>[Authorize(Scheme = AdminCookie)]</c>), so it is BOUND to
+/// the cookie user. Without resolving the cookie user here, validation compares token(cookie-user) against
+/// current(anonymous) and throws "different claims-based user" → 400 after login (but not before, where
+/// both sides are anonymous). <see cref="ResolveCookieUserAttribute"/> authenticates the cookie so
+/// <c>HttpContext.User</c> matches whoever minted the token, while <c>[AllowAnonymous]</c> keeps the
+/// pre-login toggle working (no cookie present → anonymous both sides → still matches).
+/// </remarks>
 [Area("Admin")]
 [AllowAnonymous]
 [Route("admin")]
 public sealed class LanguageController : Controller
 {
     [HttpPost("language")]
+    [ResolveCookieUser]
     [ValidateAntiForgeryToken]
     public IActionResult Set(string culture, string? returnUrl)
     {

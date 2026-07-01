@@ -1,0 +1,169 @@
+@model ExecPlan.Api.Areas.Admin.Models.HomeDashboardVm
+@using ExecPlan.Domain.Enums
+
+<div class="ep-page-head">
+  <div>
+    <h1>@Localizer["Dashboard.Title"]</h1>
+    <div class="text-muted-2">@Localizer["Dashboard.Subtitle"]</div>
+  </div>
+  <div class="ep-actions">
+    <a class="btn btn-outline-primary ep-btn-i" href="/admin/plans">
+      <partial name="_Icon" model="@("plans")" /> @Localizer["Dashboard.ViewPlans"]
+    </a>
+    <a class="btn btn-primary ep-primary ep-btn-i" href="/admin/plans/create">
+      <partial name="_Icon" model="@("add")" /> @Localizer["Dashboard.NewPlan"]
+    </a>
+  </div>
+</div>
+
+<div class="ep-stats mb-4">
+  <div class="ep-stat tone-navy">
+    <div class="ep-stat-ic"><partial name="_Icon" model="@("plans")" /></div>
+    <div>
+      <div class="n">@Model.PlansTotal</div>
+      <div class="l">@Localizer["Dashboard.PlansTotal"]</div>
+      <div class="sub">@Localizer["Dashboard.ReadyPlans"]: @Model.PlansReady · @Localizer["Dashboard.DraftPlans"]: @Model.PlansDraft</div>
+    </div>
+  </div>
+  <div class="ep-stat tone-amber">
+    <div class="ep-stat-ic"><partial name="_Icon" model="@("activations")" /></div>
+    <div>
+      <div class="n">@Model.ActiveActivations</div>
+      <div class="l">@Localizer["Dashboard.ActiveActivations"]</div>
+    </div>
+  </div>
+  <div class="ep-stat tone-green">
+    <div class="ep-stat-ic"><partial name="_Icon" model="@("shield")" /></div>
+    <div>
+      <div class="n">@Model.ReadinessPercent<span style="font-size:1.1rem">%</span></div>
+      <div class="l">@Localizer["Dashboard.ReadinessRate"]</div>
+    </div>
+  </div>
+  <div class="ep-stat tone-blue">
+    <div class="ep-stat-ic"><partial name="_Icon" model="@("users")" /></div>
+    <div>
+      <div class="n">@Model.UsersTotal</div>
+      <div class="l">@Localizer["Dashboard.Users"]</div>
+    </div>
+  </div>
+  <div class="ep-stat tone-navy">
+    <div class="ep-stat-ic"><partial name="_Icon" model="@("departments")" /></div>
+    <div>
+      <div class="n">@Model.DepartmentsTotal</div>
+      <div class="l">@Localizer["Dashboard.Departments"]</div>
+    </div>
+  </div>
+  <div class="ep-stat tone-blue">
+    <div class="ep-stat-ic"><partial name="_Icon" model="@("organizations")" /></div>
+    <div>
+      <div class="n">@Model.OrganizationsTotal</div>
+      <div class="l">@Localizer["Dashboard.Organizations"]</div>
+    </div>
+  </div>
+  <div class="ep-stat tone-amber">
+    <div class="ep-stat-ic"><partial name="_Icon" model="@("users")" /></div>
+    <div>
+      <div class="n">@Model.TeamsTotal</div>
+      <div class="l">@Localizer["Dashboard.Teams"]</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-7">
+    <div class="ep-card ep-hoverable h-100">
+      <div class="ep-card-h"><partial name="_Icon" model="@("shield")" /> @Localizer["Dashboard.TeamReadiness"]</div>
+      <div class="ep-card-b">
+        @if (Model.ParticipantsTotal == 0)
+        {
+          <div class="ep-empty">
+            <partial name="_Icon" model="@("check")" />
+            <div>@Localizer["Dashboard.NoActiveParticipants"]</div>
+          </div>
+        }
+        else
+        {
+          <div class="d-flex justify-content-between align-items-end mb-2">
+            <span style="font-size:2.4rem;font-weight:600;color:var(--ep-green);line-height:1">@Model.ReadinessPercent%</span>
+            <span class="text-muted-2">@(Model.Ready + Model.Inducted) / @Model.ParticipantsTotal</span>
+          </div>
+          <div class="ep-progress mb-3"><span style="width:@(Model.ReadinessPercent)%"></span></div>
+          <div class="d-flex flex-wrap gap-2">
+            <span class="ep-chip badge-inactive">@Localizer["Dash.Pending"]: @Model.Pending</span>
+            <span class="ep-chip badge-ready">@Localizer["Dash.Ready"]: @Model.Ready</span>
+            <span class="ep-chip badge-escalated">@Localizer["Dash.Escalated"]: @Model.Escalated</span>
+            <span class="ep-chip ep-chip-navy">@Localizer["Dash.Inducted"]: @Model.Inducted</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="ep-card h-100">
+      <div class="ep-card-h">@Localizer["Dashboard.QuickActions"]</div>
+      <div class="ep-card-b d-grid gap-2">
+        <a class="btn btn-primary ep-primary ep-btn-i justify-content-center" href="/admin/plans/create">
+          <partial name="_Icon" model="@("add")" /> @Localizer["Dashboard.NewPlan"]
+        </a>
+        <a class="btn btn-outline-primary ep-btn-i justify-content-center" href="/admin/plans">
+          <partial name="_Icon" model="@("plans")" /> @Localizer["Dashboard.ViewPlans"]
+        </a>
+        <a class="btn btn-outline-primary ep-btn-i justify-content-center" href="/admin/users">
+          <partial name="_Icon" model="@("users")" /> @Localizer["Nav.Users"]
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ep-card">
+  <div class="ep-card-h"><partial name="_Icon" model="@("clock")" /> @Localizer["Dashboard.RecentActivations"]</div>
+  @if (!Model.Recent.Any())
+  {
+    <div class="ep-empty">
+      <partial name="_Icon" model="@("activations")" />
+      <div>@Localizer["Dashboard.NoActivations"]</div>
+    </div>
+  }
+  else
+  {
+    <div class="table-responsive">
+      <table class="ep-table">
+        <thead>
+          <tr>
+            <th>@Localizer["Plans.Name"]</th>
+            <th>@Localizer["Review.Shift"]</th>
+            <th>@Localizer["Plans.Status"]</th>
+            <th>@Localizer["Dashboard.ActivatedAt"]</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach (var a in Model.Recent)
+          {
+            <tr>
+              <td class="fw-semibold">@a.PlanName</td>
+              <td>@Localizer["Shift." + a.Shift]</td>
+              <td>
+                @if (a.Status == ActivationStatus.Active)
+                {
+                  <span class="badge-ready">@Localizer["Dashboard.StatusActive"]</span>
+                }
+                else
+                {
+                  <span class="badge-inactive">@Localizer["Dashboard.StatusClosed"]</span>
+                }
+              </td>
+              <td>@a.ActivatedAtUtc.ToString("yyyy-MM-dd")</td>
+              <td>
+                <a class="ep-btn-i" href="/admin/activations/@a.ActivationId">
+                  @Localizer["Plans.WatchDashboard"] <partial name="_Icon" model="@("chart")" />
+                </a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

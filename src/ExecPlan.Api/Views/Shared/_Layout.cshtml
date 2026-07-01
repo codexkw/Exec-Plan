@@ -1,8 +1,19 @@
 @using System.Globalization
+@using ExecPlan.Domain.Enums
 @{
   var culture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
   var isRtl = culture == "ar";
   var bs = isRtl ? "/lib/bootstrap/bootstrap.rtl.min.css" : "/lib/bootstrap/bootstrap.min.css";
+  var path = (Context.Request.Path.Value ?? "").TrimEnd('/');
+  bool InRole(string r) => User?.IsInRole(r) == true;
+  var isAuth = User?.Identity?.IsAuthenticated == true;
+  var isManagerOrAdmin = InRole(nameof(UserRole.SystemAdmin)) || InRole(nameof(UserRole.PlanManager));
+  var isLeader = InRole(nameof(UserRole.TeamLeader));
+  bool On(string seg) => seg == "/admin" ? (path == "/admin" || path == "") : path.StartsWith(seg, StringComparison.OrdinalIgnoreCase);
+  string Cls(string seg) => On(seg) ? "active" : "";
+  var displayName = User?.Identity?.Name;
+  var otherLang = isRtl ? "en" : "ar";
+  var otherLangLabel = isRtl ? "EN" : "ع";
 }
 <!DOCTYPE html>
 <html lang="@culture" dir="@(isRtl ? "rtl" : "ltr")">
@@ -12,40 +23,81 @@
   <link rel="stylesheet" href="@bs"/>
   <link rel="stylesheet" href="/css/execplan.css"/>
 </head>
-<body>
-  <nav class="ep-navbar navbar navbar-expand px-3 py-2">
-    <span class="navbar-brand text-white">@Localizer["App.Title"]</span>
-    <div class="ms-auto d-flex align-items-center gap-2">
-      <form method="post" action="/admin/language">
+<body class="@(isAuth ? "ep-authed" : "ep-anon")">
+  <header class="ep-appbar">
+    @if (isAuth)
+    {
+      <button class="ep-iconbtn ep-menu-toggle" type="button" id="epMenuToggle" aria-label="menu">
+        <partial name="_Icon" model="@("menu")" />
+      </button>
+    }
+    <a class="ep-brand" href="@(isAuth ? "/admin" : "/admin/login")">
+      <span class="ep-logo"><partial name="_Icon" model="@("shield")" /></span>
+      <span>@Localizer["App.Title"]</span>
+    </a>
+    <div class="ep-appbar-actions">
+      <form method="post" action="/admin/language" class="d-inline">
         @Html.AntiForgeryToken()
-        <input type="hidden" name="culture" value="@(isRtl ? "en" : "ar")"/>
+        <input type="hidden" name="culture" value="@otherLang"/>
         <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString"/>
-        <button class="btn btn-sm btn-outline-light" type="submit">@Localizer["Lang.Toggle"]</button>
+        <button class="ep-langbtn" type="submit" title="@Localizer["Lang.Toggle"]">
+          <partial name="_Icon" model="@("translate")" /> @otherLangLabel
+        </button>
       </form>
-      @if (User?.Identity?.IsAuthenticated == true) {
-        <form method="post" action="/admin/logout">
+      @if (isAuth)
+      {
+        <form method="post" action="/admin/logout" class="d-inline">
           @Html.AntiForgeryToken()
-          <button class="btn btn-sm btn-outline-light">@Localizer["Nav.Logout"]</button>
+          <button class="ep-iconbtn" type="submit" title="@Localizer["Nav.Logout"]">
+            <partial name="_Icon" model="@("logout")" />
+          </button>
         </form>
       }
     </div>
-  </nav>
-  <div class="container-fluid"><div class="row">
-    @if (User?.Identity?.IsAuthenticated == true) {
-      <aside class="col-2 ep-sidebar p-2">
-        @if (User.IsInRole(nameof(ExecPlan.Domain.Enums.UserRole.SystemAdmin)) || User.IsInRole(nameof(ExecPlan.Domain.Enums.UserRole.PlanManager))) {
-          <a href="/admin/plans">@Localizer["Nav.Plans"]</a>
-          <a href="/admin/users">@Localizer["Nav.Users"]</a>
-          <a href="/admin/departments">@Localizer["Nav.Departments"]</a>
-          <a href="/admin/organizations">@Localizer["Nav.Organizations"]</a>
+  </header>
+
+  @if (isAuth)
+  {
+    <aside class="ep-drawer" id="epDrawer">
+      <nav class="ep-nav">
+        @if (isManagerOrAdmin)
+        {
+          <div class="ep-nav-section">@Localizer["Nav.Overview"]</div>
+          <a href="/admin" class="@Cls("/admin")"><partial name="_Icon" model="@("dashboard")" /> @Localizer["Nav.Dashboard"]</a>
+          <a href="/admin/plans" class="@Cls("/admin/plans")"><partial name="_Icon" model="@("plans")" /> @Localizer["Nav.Plans"]</a>
+          <div class="ep-nav-section">@Localizer["Nav.Manage"]</div>
+          <a href="/admin/users" class="@Cls("/admin/users")"><partial name="_Icon" model="@("users")" /> @Localizer["Nav.Users"]</a>
+          <a href="/admin/departments" class="@Cls("/admin/departments")"><partial name="_Icon" model="@("departments")" /> @Localizer["Nav.Departments"]</a>
+          <a href="/admin/organizations" class="@Cls("/admin/organizations")"><partial name="_Icon" model="@("organizations")" /> @Localizer["Nav.Organizations"]</a>
         }
-        else if (User.IsInRole(nameof(ExecPlan.Domain.Enums.UserRole.TeamLeader))) {
-          <a href="/admin/activations">@Localizer["Nav.Activations"]</a>
+        else if (isLeader)
+        {
+          <div class="ep-nav-section">@Localizer["Nav.Overview"]</div>
+          <a href="/admin/activations" class="@Cls("/admin/activations")"><partial name="_Icon" model="@("activations")" /> @Localizer["Nav.Activations"]</a>
         }
-      </aside>
-    }
-    <main class="col p-4">@RenderBody()</main>
-  </div></div>
+      </nav>
+    </aside>
+    <div class="ep-backdrop" id="epBackdrop"></div>
+  }
+
+  <main class="@(isAuth ? "ep-main" : "")">
+    <div class="ep-content">@RenderBody()</div>
+  </main>
+
   <script src="/lib/bootstrap/bootstrap.bundle.min.js"></script>
+  @if (isAuth)
+  {
+    <text>
+    <script>
+      (function () {
+        var b = document.body, t = document.getElementById('epMenuToggle'), bd = document.getElementById('epBackdrop');
+        function close(){ b.classList.remove('ep-drawer-open'); }
+        if (t) t.addEventListener('click', function(){ b.classList.toggle('ep-drawer-open'); });
+        if (bd) bd.addEventListener('click', close);
+        document.querySelectorAll('.ep-drawer a').forEach(function(a){ a.addEventListener('click', close); });
+      })();
+    </script>
+    </text>
+  }
   @await RenderSectionAsync("scripts", required: false)
 </body></html>

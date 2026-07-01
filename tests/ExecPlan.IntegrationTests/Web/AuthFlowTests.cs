@@ -110,15 +110,19 @@ public class AuthFlowTests : IClassFixture<TestAppFactory>
         => WebUtility.HtmlDecode(await res.Content.ReadAsStringAsync());
 
     [Fact]
-    public async Task Manager_logs_in_and_lands_on_plans()
+    public async Task Manager_logs_in_and_lands_on_dashboard()
     {
         var client = WebTestHelpers.NewClient(_factory);
         await WebTestHelpers.LoginAsync(client, ManagerUserName, Password);
 
+        // /admin is now the operational dashboard (HomeController renders it in-place, no longer a
+        // redirect to /admin/plans). A 200 with the localized dashboard title proves the cookie
+        // authenticated AND the dashboard rendered for a Manager.
         var res = await client.GetAsync("/admin");
 
-        res.StatusCode.Should().Be(HttpStatusCode.Redirect);
-        res.Headers.Location!.ToString().Should().Be("/admin/plans");
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await DecodedBodyAsync(res);
+        body.Should().Contain(ResxValue("Dashboard.Title"));
     }
 
     [Fact]
@@ -171,8 +175,7 @@ public class AuthFlowTests : IClassFixture<TestAppFactory>
         await WebTestHelpers.LoginAsync(client, ManagerUserName, Password);
 
         var afterLogin = await client.GetAsync("/admin");
-        afterLogin.StatusCode.Should().Be(HttpStatusCode.Redirect);
-        afterLogin.Headers.Location!.ToString().Should().Be("/admin/plans"); // proves the cookie DID authenticate
+        afterLogin.StatusCode.Should().Be(HttpStatusCode.OK); // 200 dashboard proves the cookie DID authenticate
 
         string requestToken;
         using (var scope = _factory.Services.CreateScope())

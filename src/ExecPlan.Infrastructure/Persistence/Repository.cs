@@ -45,6 +45,27 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
         return query.ToListAsync(ct);
     }
 
+    public Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null, CancellationToken ct = default)
+    {
+        var query = _db.Set<T>().AsNoTracking();
+        return predicate is null ? query.CountAsync(ct) : query.CountAsync(predicate, ct);
+    }
+
+    public Task<List<T>> ListRecentAsync<TKey>(
+        Expression<Func<T, TKey>> orderByDescending,
+        int take,
+        Expression<Func<T, bool>>? predicate = null,
+        CancellationToken ct = default)
+    {
+        var query = _db.Set<T>().AsNoTracking();
+        if (predicate is not null)
+        {
+            query = query.Where(predicate);
+        }
+
+        return query.OrderByDescending(orderByDescending).Take(take).ToListAsync(ct);
+    }
+
     public async Task AddAsync(T e, CancellationToken ct = default) => await _db.Set<T>().AddAsync(e, ct);
 
     public async Task AddRangeAsync(IEnumerable<T> e, CancellationToken ct = default) => await _db.Set<T>().AddRangeAsync(e, ct);

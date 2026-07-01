@@ -1,16 +1,32 @@
 @model ExecPlan.Api.Areas.Admin.Models.LoginVm
-<div class="row justify-content-center"><div class="col-md-4">
-  <div class="ep-card p-4 mt-5">
-    <h1 class="h4 mb-3">@Localizer["Login.Title"]</h1>
-    @if (!string.IsNullOrEmpty(Model.Error)) { <div class="alert alert-danger">@Localizer[Model.Error]</div> }
-    <form method="post" action="/admin/login">
-      @Html.AntiForgeryToken()
-      <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl"/>
-      <div class="mb-3"><label class="form-label">@Localizer["Login.UserName"]</label>
-        <input class="form-control" name="UserName" autofocus required/></div>
-      <div class="mb-3"><label class="form-label">@Localizer["Login.Password"]</label>
-        <input class="form-control" type="password" name="Password" required/></div>
-      <button class="btn btn-primary ep-primary w-100" type="submit">@Localizer["Login.Submit"]</button>
-    </form>
+<div class="row justify-content-center">
+  <div class="col-sm-9 col-md-6 col-lg-4">
+    <div class="ep-field-card mt-5">
+      <div class="text-center mb-4">
+        <span class="ep-logo d-inline-grid" style="width:56px;height:56px;border-radius:16px;background:var(--ep-navy);color:var(--ep-amber);place-items:center;box-shadow:var(--ep-e2)">
+          <partial name="_Icon" model="@("shield")" />
+        </span>
+        <h1 class="h4 mt-3 mb-0">@Localizer["Login.Title"]</h1>
+      </div>
+      @if (!string.IsNullOrEmpty(Model.Error))
+      {
+        <div class="alert alert-danger d-flex align-items-center gap-2">
+          <partial name="_Icon" model="@("warning")" /> <span>@Localizer[Model.Error]</span>
+        </div>
+      }
+      <form method="post" action="/admin/login">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl"/>
+        <div class="mb-3">
+          <label class="form-label">@Localizer["Login.UserName"]</label>
+          <input class="form-control" name="UserName" autofocus required/>
+        </div>
+        <div class="mb-4">
+          <label class="form-label">@Localizer["Login.Password"]</label>
+          <input class="form-control" type="password" name="Password" required/>
+        </div>
+        <button class="btn btn-primary ep-primary w-100" type="submit">@Localizer["Login.Submit"]</button>
+      </form>
+    </div>
   </div>
-</div></div>
+</div>

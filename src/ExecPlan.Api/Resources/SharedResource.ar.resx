@@ -442,4 +442,76 @@
   <data name="AppError.BroadcastEmpty" xml:space="preserve">
     <value>نص الرسالة مطلوب.</value>
   </data>
+  <data name="Nav.Overview" xml:space="preserve">
+    <value>نظرة عامة</value>
+  </data>
+  <data name="Nav.Manage" xml:space="preserve">
+    <value>الإدارة</value>
+  </data>
+  <data name="Nav.Dashboard" xml:space="preserve">
+    <value>لوحة القيادة</value>
+  </data>
+  <data name="Dashboard.Title" xml:space="preserve">
+    <value>لوحة القيادة</value>
+  </data>
+  <data name="Dashboard.Subtitle" xml:space="preserve">
+    <value>نظرة عامة على الخطط والتفعيلات والجاهزية</value>
+  </data>
+  <data name="Dashboard.PlansTotal" xml:space="preserve">
+    <value>إجمالي الخطط</value>
+  </data>
+  <data name="Dashboard.ReadyPlans" xml:space="preserve">
+    <value>خطط جاهزة</value>
+  </data>
+  <data name="Dashboard.DraftPlans" xml:space="preserve">
+    <value>مسودّات</value>
+  </data>
+  <data name="Dashboard.ActiveActivations" xml:space="preserve">
+    <value>تفعيلات نشطة</value>
+  </data>
+  <data name="Dashboard.Users" xml:space="preserve">
+    <value>المستخدمون</value>
+  </data>
+  <data name="Dashboard.Departments" xml:space="preserve">
+    <value>الأقسام</value>
+  </data>
+  <data name="Dashboard.Organizations" xml:space="preserve">
+    <value>المنشآت</value>
+  </data>
+  <data name="Dashboard.Teams" xml:space="preserve">
+    <value>الفرق</value>
+  </data>
+  <data name="Dashboard.ReadinessRate" xml:space="preserve">
+    <value>نسبة الجاهزية</value>
+  </data>
+  <data name="Dashboard.TeamReadiness" xml:space="preserve">
+    <value>جاهزية الفرق في التفعيلات النشطة</value>
+  </data>
+  <data name="Dashboard.NoActiveParticipants" xml:space="preserve">
+    <value>لا يوجد مشاركون في تفعيلات نشطة حالياً</value>
+  </data>
+  <data name="Dashboard.RecentActivations" xml:space="preserve">
+    <value>أحدث التفعيلات</value>
+  </data>
+  <data name="Dashboard.NoActivations" xml:space="preserve">
+    <value>لا توجد تفعيلات بعد</value>
+  </data>
+  <data name="Dashboard.QuickActions" xml:space="preserve">
+    <value>إجراءات سريعة</value>
+  </data>
+  <data name="Dashboard.NewPlan" xml:space="preserve">
+    <value>خطة جديدة</value>
+  </data>
+  <data name="Dashboard.ViewPlans" xml:space="preserve">
+    <value>عرض كل الخطط</value>
+  </data>
+  <data name="Dashboard.ActivatedAt" xml:space="preserve">
+    <value>وقت التفعيل</value>
+  </data>
+  <data name="Dashboard.StatusActive" xml:space="preserve">
+    <value>نشط</value>
+  </data>
+  <data name="Dashboard.StatusClosed" xml:space="preserve">
+    <value>مغلق</value>
+  </data>
 </root>

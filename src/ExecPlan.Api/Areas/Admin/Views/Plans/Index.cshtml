@@ -1,17 +1,26 @@
 @model ExecPlan.Api.Areas.Admin.Models.PlanListVm
 @using ExecPlan.Domain.Enums
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h4 mb-0">@Localizer["Plans.Title"]</h1>
-  <a class="btn btn-primary ep-primary" href="/admin/plans/create">@Localizer["Plans.New"]</a>
+
+<div class="ep-page-head">
+  <h1>@Localizer["Plans.Title"]</h1>
+  <div class="ep-actions">
+    <a class="btn btn-primary ep-primary ep-btn-i" href="/admin/plans/create">
+      <partial name="_Icon" model="@("add")" /> @Localizer["Plans.New"]
+    </a>
+  </div>
 </div>
-<div class="ep-card p-3">
-  @if (!Model.Plans.Any())
-  {
-    <p class="text-muted mb-0">@Localizer["Plans.NoPlans"]</p>
-  }
-  else
-  {
-    <table class="table">
+
+@if (!Model.Plans.Any())
+{
+  <div class="ep-card"><div class="ep-empty">
+    <partial name="_Icon" model="@("plans")" />
+    <div>@Localizer["Plans.NoPlans"]</div>
+  </div></div>
+}
+else
+{
+  <div class="table-responsive">
+    <table class="ep-table">
       <thead>
         <tr>
           <th>@Localizer["Plans.Name"]</th>
@@ -24,27 +33,29 @@
         @foreach (var p in Model.Plans)
         {
           <tr>
-            <td><a href="/admin/plans/@p.Id">@p.Name</a></td>
+            <td class="fw-semibold"><a href="/admin/plans/@p.Id">@p.Name</a></td>
             <td>@Localizer["PlanType." + p.Type]</td>
             <td>
               @if (p.Status == PlanStatus.Draft)
               {
-                <span class="badge badge-draft">@Localizer["Status.Draft"]</span>
+                <span class="badge-draft">@Localizer["Status.Draft"]</span>
               }
               else
               {
-                <span class="badge badge-ready">@Localizer["Status.Ready"]</span>
+                <span class="badge-ready">@Localizer["Status.Ready"]</span>
               }
             </td>
             <td>
               @if (p.ActiveActivationId is Guid activationId)
               {
-                <a href="/admin/activations/@activationId">@Localizer["Plans.WatchDashboard"]</a>
+                <a class="ep-btn-i" href="/admin/activations/@activationId">
+                  @Localizer["Plans.WatchDashboard"] <partial name="_Icon" model="@("chart")" />
+                </a>
               }
             </td>
           </tr>
         }
       </tbody>
     </table>
-  }
-</div>
+  </div>
+}
