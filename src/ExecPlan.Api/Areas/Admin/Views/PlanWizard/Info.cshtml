@@ -1,0 +1,35 @@
+@model ExecPlan.Api.Areas.Admin.Models.WizardInfoVm
+@using ExecPlan.Domain.Enums
+<h1 class="h4 mb-3">@Localizer["Plans.New"]</h1>
+<partial name="_Steps" />
+<div class="ep-card p-4">
+  <form method="post" action="/admin/plans/create">
+    @Html.AntiForgeryToken()
+    <div class="mb-3">
+      <label class="form-label">@Localizer["Plans.Name"]</label>
+      <input class="form-control" name="Name" value="@Model.Name" required/>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">@Localizer["Plans.Type"]</label>
+      <select class="form-select" name="Type">
+        @foreach (var t in Enum.GetValues<PlanType>())
+        {
+          <option value="@t" selected="@(t == Model.Type)">@Localizer["PlanType." + t]</option>
+        }
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">@Localizer["Plans.Objective"]</label>
+      <textarea class="form-control" name="Objective">@Model.Objective</textarea>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">@Localizer["Plans.Description"]</label>
+      <textarea class="form-control" name="Description">@Model.Description</textarea>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">@Localizer["Plans.Scope"]</label>
+      <textarea class="form-control" name="Scope">@Model.Scope</textarea>
+    </div>
+    <button class="btn btn-primary ep-primary" type="submit">@Localizer["Wizard.Next"]</button>
+  </form>
+</div>

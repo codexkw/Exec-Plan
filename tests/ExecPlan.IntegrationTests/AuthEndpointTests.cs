@@ -11,6 +11,7 @@ namespace ExecPlan.IntegrationTests;
 /// validation, claim-type alignment with <c>JwtTokenFactory</c>, and the <c>[Authorize]</c>-protected
 /// diagnostic endpoint.
 /// </summary>
+[Collection("WebHostSequential")]
 public class AuthEndpointTests : IClassFixture<TestAppFactory>
 {
     private readonly TestAppFactory _factory;

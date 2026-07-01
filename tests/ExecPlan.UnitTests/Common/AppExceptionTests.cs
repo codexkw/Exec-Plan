@@ -40,4 +40,16 @@ public class AppExceptionTests
     {
         AppException.NotFound("custom message").Message.Should().Be("custom message");
     }
+
+    [Fact]
+    public void Code_defaults_to_null_when_not_supplied()
+    {
+        AppException.Conflict("no code here").Code.Should().BeNull();
+    }
+
+    [Fact]
+    public void Code_is_preserved_when_supplied()
+    {
+        AppException.Conflict("already active", "PlanAlreadyActive").Code.Should().Be("PlanAlreadyActive");
+    }
 }

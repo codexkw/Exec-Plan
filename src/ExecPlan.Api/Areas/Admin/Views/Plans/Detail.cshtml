@@ -1,0 +1,101 @@
+@model ExecPlan.Api.Areas.Admin.Models.PlanDetailVm
+@using ExecPlan.Domain.Enums
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">@Model.Name</h1>
+  <a class="btn btn-secondary" href="/admin/plans">@Localizer["Common.Back"]</a>
+</div>
+
+<div class="ep-card p-3 mb-3">
+  <dl class="row mb-0">
+    <dt class="col-sm-3">@Localizer["Plans.Type"]</dt>
+    <dd class="col-sm-9">@Localizer["PlanType." + Model.Type]</dd>
+
+    <dt class="col-sm-3">@Localizer["Plans.Status"]</dt>
+    <dd class="col-sm-9">
+      @if (Model.Status == PlanStatus.Draft)
+      {
+        <span class="badge badge-draft">@Localizer["Status.Draft"]</span>
+      }
+      else
+      {
+        <span class="badge badge-ready">@Localizer["Status.Ready"]</span>
+      }
+    </dd>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Objective))
+    {
+      <dt class="col-sm-3">@Localizer["Plans.Objective"]</dt>
+      <dd class="col-sm-9">@Model.Objective</dd>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.Description))
+    {
+      <dt class="col-sm-3">@Localizer["Plans.Description"]</dt>
+      <dd class="col-sm-9">@Model.Description</dd>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.Scope))
+    {
+      <dt class="col-sm-3">@Localizer["Plans.Scope"]</dt>
+      <dd class="col-sm-9">@Model.Scope</dd>
+    }
+  </dl>
+</div>
+
+@if (TempData["activateError"] is string activateError)
+{
+  <div class="alert alert-danger" role="alert">@activateError</div>
+}
+
+@if (Model.Status == PlanStatus.Ready)
+{
+  <form method="post" action="/admin/plans/@Model.Id/activate" class="mb-3"
+        onsubmit="return confirm('@Localizer["Plans.ActivateConfirm"]');">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-launch">@Localizer["Plans.Activate"]</button>
+  </form>
+}
+else
+{
+  <p class="text-muted mb-3">@Localizer["Plans.ActivateDraftHint"]</p>
+}
+
+@if (Model.ActiveActivationId is Guid activationId)
+{
+  <div class="mb-3">
+    <a class="btn btn-outline-primary" href="/admin/activations/@activationId">@Localizer["Plans.WatchDashboard"]</a>
+  </div>
+}
+
+<h2 class="h5">@Localizer["Plans.Teams"]</h2>
+@if (!Model.Teams.Any())
+{
+  <p class="text-muted">@Localizer["Plans.NoTeams"]</p>
+}
+else
+{
+  @foreach (var team in Model.Teams)
+  {
+    <div class="ep-card p-3 mb-3">
+      <h3 class="h6">@team.Name</h3>
+      <div class="row">
+        <div class="col-md-6">
+          <strong>@Localizer["Plans.Members"]</strong>
+          <ul>
+            @foreach (var m in team.Members)
+            {
+              <li>@m</li>
+            }
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <strong>@Localizer["Plans.Tasks"]</strong>
+          <ul>
+            @foreach (var t in team.Tasks)
+            {
+              <li>@t</li>
+            }
+          </ul>
+        </div>
+      </div>
+    </div>
+  }
+}

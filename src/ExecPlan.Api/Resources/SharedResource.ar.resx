@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="App.Title" xml:space="preserve">
+    <value>إكسبلان</value>
+  </data>
+  <data name="Nav.Plans" xml:space="preserve">
+    <value>الخطط</value>
+  </data>
+  <data name="Nav.Users" xml:space="preserve">
+    <value>المستخدمون</value>
+  </data>
+  <data name="Nav.Departments" xml:space="preserve">
+    <value>الأقسام</value>
+  </data>
+  <data name="Nav.Organizations" xml:space="preserve">
+    <value>المؤسسات</value>
+  </data>
+  <data name="Nav.Activations" xml:space="preserve">
+    <value>الأنشطة</value>
+  </data>
+  <data name="Nav.Logout" xml:space="preserve">
+    <value>تسجيل الخروج</value>
+  </data>
+  <data name="Lang.Toggle" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Login.Title" xml:space="preserve">
+    <value>تسجيل الدخول</value>
+  </data>
+  <data name="Login.UserName" xml:space="preserve">
+    <value>اسم المستخدم</value>
+  </data>
+  <data name="Login.Password" xml:space="preserve">
+    <value>كلمة المرور</value>
+  </data>
+  <data name="Login.Submit" xml:space="preserve">
+    <value>دخول</value>
+  </data>
+  <data name="Login.Invalid" xml:space="preserve">
+    <value>اسم المستخدم أو كلمة المرور غير صحيحة</value>
+  </data>
+  <data name="Login.MemberBlocked" xml:space="preserve">
+    <value>لا يمكن لأعضاء الفريق تسجيل الدخول إلى لوحة التحكم</value>
+  </data>
+  <data name="Common.Save" xml:space="preserve">
+    <value>حفظ</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>إلغاء</value>
+  </data>
+  <data name="Common.Create" xml:space="preserve">
+    <value>إنشاء</value>
+  </data>
+  <data name="Common.Edit" xml:space="preserve">
+    <value>تعديل</value>
+  </data>
+  <data name="Common.Back" xml:space="preserve">
+    <value>رجوع</value>
+  </data>
+  <data name="Common.Actions" xml:space="preserve">
+    <value>إجراءات</value>
+  </data>
+  <data name="Common.Yes" xml:space="preserve">
+    <value>نعم</value>
+  </data>
+  <data name="Common.No" xml:space="preserve">
+    <value>لا</value>
+  </data>
+  <data name="Status.Draft" xml:space="preserve">
+    <value>مسودة</value>
+  </data>
+  <data name="Status.Ready" xml:space="preserve">
+    <value>جاهزة</value>
+  </data>
+  <data name="Users.Title" xml:space="preserve">
+    <value>المستخدمون</value>
+  </data>
+  <data name="Users.FullName" xml:space="preserve">
+    <value>الاسم الكامل</value>
+  </data>
+  <data name="Users.Role" xml:space="preserve">
+    <value>الدور</value>
+  </data>
+  <data name="Users.Phone" xml:space="preserve">
+    <value>الهاتف</value>
+  </data>
+  <data name="Users.Active" xml:space="preserve">
+    <value>نشط</value>
+  </data>
+  <data name="Users.Add" xml:space="preserve">
+    <value>إضافة مستخدم</value>
+  </data>
+  <data name="Users.Organization" xml:space="preserve">
+    <value>المؤسسة</value>
+  </data>
+  <data name="Users.Department" xml:space="preserve">
+    <value>القسم</value>
+  </data>
+  <data name="Users.NoDepartment" xml:space="preserve">
+    <value>بدون قسم</value>
+  </data>
+  <data name="Role.SystemAdmin" xml:space="preserve">
+    <value>مسؤول النظام</value>
+  </data>
+  <data name="Role.PlanManager" xml:space="preserve">
+    <value>مدير الخطة</value>
+  </data>
+  <data name="Role.TeamLeader" xml:space="preserve">
+    <value>قائد الفريق</value>
+  </data>
+  <data name="Role.TeamMember" xml:space="preserve">
+    <value>عضو الفريق</value>
+  </data>
+  <data name="Dept.Title" xml:space="preserve">
+    <value>الأقسام</value>
+  </data>
+  <data name="Dept.Name" xml:space="preserve">
+    <value>اسم القسم</value>
+  </data>
+  <data name="Dept.Add" xml:space="preserve">
+    <value>إضافة قسم</value>
+  </data>
+  <data name="Org.Title" xml:space="preserve">
+    <value>المؤسسات</value>
+  </data>
+  <data name="Org.Name" xml:space="preserve">
+    <value>اسم المؤسسة</value>
+  </data>
+  <data name="Org.Add" xml:space="preserve">
+    <value>إضافة مؤسسة</value>
+  </data>
+  <data name="Plans.Title" xml:space="preserve">
+    <value>الخطط</value>
+  </data>
+  <data name="Plans.New" xml:space="preserve">
+    <value>خطة جديدة</value>
+  </data>
+  <data name="Plans.Name" xml:space="preserve">
+    <value>اسم الخطة</value>
+  </data>
+  <data name="Plans.Type" xml:space="preserve">
+    <value>نوع الخطة</value>
+  </data>
+  <data name="Plans.Activate" xml:space="preserve">
+    <value>إطلاق الخطة</value>
+  </data>
+  <data name="Plans.ActivateConfirm" xml:space="preserve">
+    <value>هل أنت متأكد من إطلاق هذه الخطة؟</value>
+  </data>
+  <data name="Plans.ActivateDraftHint" xml:space="preserve">
+    <value>أكمل معالج الخطة حتى تصبح "جاهزة" قبل الإطلاق.</value>
+  </data>
+  <data name="Plans.Status" xml:space="preserve">
+    <value>الحالة</value>
+  </data>
+  <data name="Plans.Objective" xml:space="preserve">
+    <value>الهدف</value>
+  </data>
+  <data name="Plans.Description" xml:space="preserve">
+    <value>الوصف</value>
+  </data>
+  <data name="Plans.Scope" xml:space="preserve">
+    <value>النطاق</value>
+  </data>
+  <data name="Plans.Teams" xml:space="preserve">
+    <value>الفرق</value>
+  </data>
+  <data name="Plans.Members" xml:space="preserve">
+    <value>الأعضاء</value>
+  </data>
+  <data name="Plans.Tasks" xml:space="preserve">
+    <value>المهام</value>
+  </data>
+  <data name="Plans.NoTeams" xml:space="preserve">
+    <value>لا توجد فرق بعد</value>
+  </data>
+  <data name="Plans.NoPlans" xml:space="preserve">
+    <value>لا توجد خطط بعد</value>
+  </data>
+  <data name="Plans.WatchDashboard" xml:space="preserve">
+    <value>مشاهدة اللوحة</value>
+  </data>
+  <data name="PlanType.Daily" xml:space="preserve">
+    <value>يومية</value>
+  </data>
+  <data name="PlanType.Weekly" xml:space="preserve">
+    <value>أسبوعية</value>
+  </data>
+  <data name="PlanType.Emergency" xml:space="preserve">
+    <value>طوارئ</value>
+  </data>
+  <data name="PlanType.Guard" xml:space="preserve">
+    <value>حراسة</value>
+  </data>
+  <data name="PlanType.Transport" xml:space="preserve">
+    <value>نقل</value>
+  </data>
+  <data name="PlanType.Maintenance" xml:space="preserve">
+    <value>صيانة</value>
+  </data>
+  <data name="PlanType.It" xml:space="preserve">
+    <value>تقنية المعلومات</value>
+  </data>
+  <data name="PlanType.Inspection" xml:space="preserve">
+    <value>تفتيش</value>
+  </data>
+  <data name="PlanType.General" xml:space="preserve">
+    <value>عامة</value>
+  </data>
+  <data name="Wizard.Step1" xml:space="preserve">
+    <value>معلومات الخطة</value>
+  </data>
+  <data name="Wizard.Step2" xml:space="preserve">
+    <value>الفرق والأعضاء</value>
+  </data>
+  <data name="Wizard.Step3" xml:space="preserve">
+    <value>المهام</value>
+  </data>
+  <data name="Wizard.Step4" xml:space="preserve">
+    <value>النوبات والمراجعة</value>
+  </data>
+  <data name="Wizard.Next" xml:space="preserve">
+    <value>التالي</value>
+  </data>
+  <data name="Wizard.Finish" xml:space="preserve">
+    <value>إنهاء</value>
+  </data>
+  <data name="Teams.Name" xml:space="preserve">
+    <value>اسم الفريق</value>
+  </data>
+  <data name="Teams.Leader" xml:space="preserve">
+    <value>قائد الفريق</value>
+  </data>
+  <data name="Teams.NoLeader" xml:space="preserve">
+    <value>بدون قائد</value>
+  </data>
+  <data name="Teams.Add" xml:space="preserve">
+    <value>إضافة فريق</value>
+  </data>
+  <data name="Teams.AtLeastOneRequired" xml:space="preserve">
+    <value>أضف فريقاً واحداً على الأقل يحتوي على عضو واحد على الأقل قبل المتابعة.</value>
+  </data>
+  <data name="Tasks.Title" xml:space="preserve">
+    <value>عنوان المهمة</value>
+  </data>
+  <data name="Tasks.Order" xml:space="preserve">
+    <value>الترتيب</value>
+  </data>
+  <data name="Tasks.DurationMinutes" xml:space="preserve">
+    <value>المدة (بالدقائق)</value>
+  </data>
+  <data name="Tasks.MinutesShort" xml:space="preserve">
+    <value>د</value>
+  </data>
+  <data name="Tasks.Add" xml:space="preserve">
+    <value>إضافة مهمة</value>
+  </data>
+  <data name="Tasks.NoTasks" xml:space="preserve">
+    <value>لا توجد مهام بعد</value>
+  </data>
+  <data name="Tasks.AtLeastOneRequired" xml:space="preserve">
+    <value>أضف مهمة واحدة على الأقل لفريق واحد على الأقل قبل المتابعة.</value>
+  </data>
+  <data name="Review.Roster" xml:space="preserve">
+    <value>جدول النوبات</value>
+  </data>
+  <data name="Review.PlanSummary" xml:space="preserve">
+    <value>ملخص الخطة</value>
+  </data>
+  <data name="Review.Shift" xml:space="preserve">
+    <value>النوبة</value>
+  </data>
+  <data name="Review.Date" xml:space="preserve">
+    <value>التاريخ</value>
+  </data>
+  <data name="Review.Substitute" xml:space="preserve">
+    <value>البديل</value>
+  </data>
+  <data name="Review.NoSubstitute" xml:space="preserve">
+    <value>بدون بديل</value>
+  </data>
+  <data name="Review.RosterInvalid" xml:space="preserve">
+    <value>أضف صفاً واحداً على الأقل في جدول النوبات؛ يجب أن يكون أي بديل عضواً في هذه الخطة.</value>
+  </data>
+  <data name="Shift.Morning" xml:space="preserve">
+    <value>صباحية</value>
+  </data>
+  <data name="Shift.Evening" xml:space="preserve">
+    <value>مسائية</value>
+  </data>
+  <data name="Shift.Night" xml:space="preserve">
+    <value>ليلية</value>
+  </data>
+  <data name="Dash.Total" xml:space="preserve">
+    <value>الإجمالي</value>
+  </data>
+  <data name="Dash.Pending" xml:space="preserve">
+    <value>قيد الانتظار</value>
+  </data>
+  <data name="Dash.Ready" xml:space="preserve">
+    <value>جاهز</value>
+  </data>
+  <data name="Dash.Escalated" xml:space="preserve">
+    <value>تم التصعيد</value>
+  </data>
+  <data name="Dash.Inducted" xml:space="preserve">
+    <value>تم الإحلال</value>
+  </data>
+  <data name="Dash.ResponseRate" xml:space="preserve">
+    <value>نسبة الاستجابة</value>
+  </data>
+  <data name="Dash.TaskRate" xml:space="preserve">
+    <value>نسبة إنجاز المهام</value>
+  </data>
+  <data name="Dash.Teams" xml:space="preserve">
+    <value>الفرق</value>
+  </data>
+  <data name="Dash.Overdue" xml:space="preserve">
+    <value>المهام المتأخرة</value>
+  </data>
+  <data name="Dash.Events" xml:space="preserve">
+    <value>الأحداث</value>
+  </data>
+  <data name="Dash.Escalate" xml:space="preserve">
+    <value>تصعيد</value>
+  </data>
+  <data name="Dash.Broadcast" xml:space="preserve">
+    <value>بث رسالة</value>
+  </data>
+  <data name="Dash.Close" xml:space="preserve">
+    <value>إغلاق</value>
+  </data>
+  <data name="Dash.CloseConfirm" xml:space="preserve">
+    <value>هل أنت متأكد من إغلاق هذا التفعيل؟</value>
+  </data>
+  <data name="Dash.Title" xml:space="preserve">
+    <value>لوحة المتابعة الحية</value>
+  </data>
+  <data name="Dash.BroadcastBody" xml:space="preserve">
+    <value>نص الرسالة</value>
+  </data>
+  <data name="Dash.Send" xml:space="preserve">
+    <value>إرسال</value>
+  </data>
+  <data name="Dash.ToastPrefix" xml:space="preserve">
+    <value>نتيجة دورة التصعيد</value>
+  </data>
+  <data name="Activations.Title" xml:space="preserve">
+    <value>الأنشطة النشطة</value>
+  </data>
+  <data name="Activations.Empty" xml:space="preserve">
+    <value>لا توجد أنشطة نشطة تقودها حالياً</value>
+  </data>
+  <data name="Summary.Title" xml:space="preserve">
+    <value>الملخص</value>
+  </data>
+  <data name="Summary.ClosedNote" xml:space="preserve">
+    <value>تم إغلاق هذا التفعيل. فيما يلي النتائج النهائية.</value>
+  </data>
+  <data name="Error.NotFound" xml:space="preserve">
+    <value>العنصر غير موجود</value>
+  </data>
+  <data name="Error.Denied" xml:space="preserve">
+    <value>ليس لديك صلاحية الوصول إلى هذه الصفحة</value>
+  </data>
+  <data name="Error.Generic" xml:space="preserve">
+    <value>حدث خطأ غير متوقع</value>
+  </data>
+  <data name="AppError.Generic" xml:space="preserve">
+    <value>تعذّر إتمام العملية.</value>
+  </data>
+  <data name="AppError.PlanAlreadyActive" xml:space="preserve">
+    <value>هذه الخطة مُفعّلة بالفعل.</value>
+  </data>
+  <data name="AppError.NoOneOnDuty" xml:space="preserve">
+    <value>لا يوجد أحد في الخدمة لهذه النوبة.</value>
+  </data>
+  <data name="AppError.EscalateClosed" xml:space="preserve">
+    <value>لا يمكن تصعيد تفعيل مُغلق.</value>
+  </data>
+  <data name="AppError.AlreadyClosed" xml:space="preserve">
+    <value>هذا التفعيل مُغلق بالفعل.</value>
+  </data>
+  <data name="AppError.BroadcastEmpty" xml:space="preserve">
+    <value>نص الرسالة مطلوب.</value>
+  </data>
+</root>

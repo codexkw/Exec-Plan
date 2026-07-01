@@ -1,0 +1,50 @@
+@model ExecPlan.Api.Areas.Admin.Models.UserListVm
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">@Localizer["Users.Title"]</h1>
+  @if (Model.CanWrite)
+  {
+    <a class="btn btn-primary ep-primary" href="/admin/users/create">@Localizer["Users.Add"]</a>
+  }
+</div>
+<div class="ep-card p-3">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>@Localizer["Login.UserName"]</th>
+        <th>@Localizer["Users.FullName"]</th>
+        <th>@Localizer["Users.Role"]</th>
+        <th>@Localizer["Users.Department"]</th>
+        <th>@Localizer["Users.Active"]</th>
+        @if (Model.CanWrite)
+        {
+          <th>@Localizer["Common.Actions"]</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @foreach (var u in Model.Users)
+      {
+        <tr>
+          <td>@u.UserName</td>
+          <td>@u.FullName</td>
+          <td>@Localizer["Role." + u.Role]</td>
+          <td>@u.Department</td>
+          <td>
+            @if (u.IsActive)
+            {
+              <span class="badge badge-active">@Localizer["Users.Active"]</span>
+            }
+            else
+            {
+              <span class="badge badge-inactive">@Localizer["Common.No"]</span>
+            }
+          </td>
+          @if (Model.CanWrite)
+          {
+            <td><a href="/admin/users/@u.Id/edit">@Localizer["Common.Edit"]</a></td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,77 @@
+@model ExecPlan.Api.Areas.Admin.Models.WizardTeamsVm
+<h1 class="h4 mb-3">@Localizer["Plans.New"]</h1>
+<partial name="_Steps" />
+
+<h2 class="h5">@Localizer["Plans.Teams"]</h2>
+@if (!Model.Teams.Any())
+{
+  <p class="text-muted">@Localizer["Plans.NoTeams"]</p>
+}
+else
+{
+  @foreach (var team in Model.Teams)
+  {
+    <div class="ep-card p-3 mb-3">
+      <h3 class="h6">@team.Name</h3>
+      @{
+        var leaderLabel = team.TeamLeaderUserId is Guid leaderId
+          ? Model.AllUsers.FirstOrDefault(u => u.Id == leaderId)?.Label
+          : null;
+      }
+      @if (!string.IsNullOrEmpty(leaderLabel))
+      {
+        <p class="mb-1"><strong>@Localizer["Teams.Leader"]:</strong> @leaderLabel</p>
+      }
+      <strong>@Localizer["Plans.Members"]</strong>
+      <ul>
+        @foreach (var memberId in team.MemberUserIds)
+        {
+          <li>@(Model.AllUsers.FirstOrDefault(u => u.Id == memberId)?.Label ?? memberId.ToString())</li>
+        }
+      </ul>
+    </div>
+  }
+}
+
+@if (ViewData["teamsBlocked"] is string blockedMessage)
+{
+  <div class="alert alert-warning">@blockedMessage</div>
+}
+
+<div class="ep-card p-4 mb-3">
+  <h3 class="h6">@Localizer["Teams.Add"]</h3>
+  <form method="post" action="/admin/plans/create/@Model.PlanId/teams">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="intent" value="add"/>
+    <div class="mb-3">
+      <label class="form-label">@Localizer["Teams.Name"]</label>
+      <input class="form-control" name="Name" required/>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">@Localizer["Teams.Leader"]</label>
+      <select class="form-select" name="TeamLeaderUserId">
+        <option value="">@Localizer["Teams.NoLeader"]</option>
+        @foreach (var u in Model.AllUsers)
+        {
+          <option value="@u.Id">@u.Label</option>
+        }
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">@Localizer["Plans.Members"]</label>
+      <select class="form-select" name="MemberUserIds" multiple>
+        @foreach (var u in Model.AllUsers)
+        {
+          <option value="@u.Id">@u.Label</option>
+        }
+      </select>
+    </div>
+    <button class="btn btn-primary ep-primary" type="submit">@Localizer["Teams.Add"]</button>
+  </form>
+</div>
+
+<form method="post" action="/admin/plans/create/@Model.PlanId/teams">
+  @Html.AntiForgeryToken()
+  <input type="hidden" name="intent" value="next"/>
+  <button class="btn btn-primary ep-primary" type="submit">@Localizer["Wizard.Next"]</button>
+</form>

@@ -1,0 +1,136 @@
+@model ExecPlan.Api.Areas.Admin.Models.WizardReviewVm
+@using ExecPlan.Domain.Enums
+<h1 class="h4 mb-3">@Localizer["Plans.New"]</h1>
+<partial name="_Steps" />
+
+@{
+    var teamNames = Model.Readback.Teams.ToDictionary(t => t.TeamId, t => t.Name);
+    var memberLabels = Model.Readback.Teams
+        .SelectMany(t => t.Members)
+        .GroupBy(m => m.UserId)
+        .ToDictionary(g => g.Key, g => g.First().Label);
+    var allMembers = memberLabels
+        .Select(kv => new { UserId = kv.Key, Label = kv.Value })
+        .OrderBy(m => m.Label)
+        .ToList();
+}
+
+@if (ViewData["reviewBlocked"] is string blockedMessage)
+{
+  <div class="alert alert-warning">@blockedMessage</div>
+}
+
+<h2 class="h5">@Localizer["Review.Roster"]</h2>
+<form method="post" action="/admin/plans/create/@Model.PlanId/review">
+  @Html.AntiForgeryToken()
+  @if (!Model.Roster.Any())
+  {
+    <p class="text-muted">@Localizer["Plans.NoTeams"]</p>
+  }
+  else
+  {
+    <table class="table">
+      <thead>
+        <tr>
+          <th>@Localizer["Plans.Teams"]</th>
+          <th>@Localizer["Plans.Members"]</th>
+          <th>@Localizer["Review.Shift"]</th>
+          <th>@Localizer["Review.Date"]</th>
+          <th>@Localizer["Review.Substitute"]</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (var i = 0; i < Model.Roster.Count; i++)
+        {
+          var row = Model.Roster[i];
+          <tr>
+            <td>
+              @(teamNames.TryGetValue(row.TeamId, out var teamName) ? teamName : row.TeamId.ToString())
+              <input type="hidden" name="roster[@i].TeamId" value="@row.TeamId"/>
+            </td>
+            <td>
+              @(memberLabels.TryGetValue(row.UserId, out var memberLabel) ? memberLabel : row.UserId.ToString())
+              <input type="hidden" name="roster[@i].UserId" value="@row.UserId"/>
+            </td>
+            <td>
+              <select class="form-select" name="roster[@i].Shift">
+                @foreach (var s in Enum.GetValues<ShiftBand>())
+                {
+                  <option value="@s" selected="@(s == row.Shift)">@Localizer["Shift." + s]</option>
+                }
+              </select>
+            </td>
+            <td>
+              <input class="form-control" type="date" name="roster[@i].Date" value="@row.Date.ToString("yyyy-MM-dd")"/>
+            </td>
+            <td>
+              <select class="form-select" name="roster[@i].SubstituteForUserId">
+                <option value="">@Localizer["Review.NoSubstitute"]</option>
+                @foreach (var m in allMembers)
+                {
+                  <option value="@m.UserId" selected="@(row.SubstituteForUserId == m.UserId)">@m.Label</option>
+                }
+              </select>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+  <button class="btn btn-primary ep-primary" type="submit">@Localizer["Wizard.Finish"]</button>
+</form>
+
+<h2 class="h5 mt-4">@Localizer["Review.PlanSummary"]</h2>
+<div class="ep-card p-3 mb-3">
+  <dl class="row mb-0">
+    <dt class="col-sm-3">@Localizer["Plans.Name"]</dt>
+    <dd class="col-sm-9">@Model.Readback.PlanName</dd>
+
+    <dt class="col-sm-3">@Localizer["Plans.Type"]</dt>
+    <dd class="col-sm-9">@Localizer["PlanType." + Model.Readback.Type]</dd>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Readback.Objective))
+    {
+      <dt class="col-sm-3">@Localizer["Plans.Objective"]</dt>
+      <dd class="col-sm-9">@Model.Readback.Objective</dd>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.Readback.Description))
+    {
+      <dt class="col-sm-3">@Localizer["Plans.Description"]</dt>
+      <dd class="col-sm-9">@Model.Readback.Description</dd>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.Readback.Scope))
+    {
+      <dt class="col-sm-3">@Localizer["Plans.Scope"]</dt>
+      <dd class="col-sm-9">@Model.Readback.Scope</dd>
+    }
+  </dl>
+</div>
+
+<h2 class="h5">@Localizer["Plans.Teams"]</h2>
+@foreach (var team in Model.Readback.Teams)
+{
+  <div class="ep-card p-3 mb-3">
+    <h3 class="h6">@team.Name</h3>
+    <div class="row">
+      <div class="col-md-6">
+        <strong>@Localizer["Plans.Members"]</strong>
+        <ul>
+          @foreach (var m in team.Members)
+          {
+            <li>@m.Label</li>
+          }
+        </ul>
+      </div>
+      <div class="col-md-6">
+        <strong>@Localizer["Plans.Tasks"]</strong>
+        <ul>
+          @foreach (var t in team.Tasks)
+          {
+            <li>@t</li>
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+}

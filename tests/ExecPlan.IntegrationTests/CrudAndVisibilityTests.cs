@@ -12,6 +12,7 @@ namespace ExecPlan.IntegrationTests;
 /// Plans/Teams/etc. Also covers a couple of full round-trips (create -> read-back) and the
 /// PasswordHash-never-leaks guarantee on the Users endpoints.
 /// </summary>
+[Collection("WebHostSequential")]
 public class CrudAndVisibilityTests : IClassFixture<TestAppFactory>
 {
     private readonly TestAppFactory _factory;

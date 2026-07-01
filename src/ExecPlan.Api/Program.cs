@@ -2,6 +2,8 @@ using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
 using ExecPlan.Api.Auth;
 using ExecPlan.Api.Hubs;
 using ExecPlan.Api.Middleware;
@@ -27,10 +29,24 @@ builder.Services.RemoveAll<IRealtimeNotifier>();
 builder.Services.AddScoped<IRealtimeNotifier, SignalRRealtimeNotifier>();
 
 builder.Services.AddControllers();
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddViewLocalization()
+    .AddDataAnnotationsLocalization(o =>
+        o.DataAnnotationLocalizerProvider = (_, f) => f.Create(typeof(ExecPlan.Api.Resources.SharedResource)));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddSignalR();
+
+// Arabic-first (CLAUDE.md convention 7): .NET's default HtmlEncoder is conservative and renders every
+// non-Basic-Latin character (i.e. every Arabic string this whole admin area renders) as a numeric HTML
+// character reference (e.g. "الإجمالي" -> "&#x627;&#x644;..."). That is valid, correctly-rendering HTML,
+// but needlessly bloats every Arabic-first page and defeats anything that inspects the raw response body
+// for literal Arabic text (e.g. an integration test). Allowing the full Unicode range keeps the
+// mandatory HTML-metacharacter escaping (<>&"') while stopping the extra non-ASCII escaping.
+builder.Services.AddWebEncoders(options =>
+{
+    options.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All);
+});
 
 // Arabic-first localization (CLAUDE.md convention 7): supported ar/en, default ar (RTL), resolved
 // cookie → query → accept-language.
@@ -98,8 +114,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     })
     .AddCookie(AuthPolicies.AdminCookieScheme, options =>
     {
-        // Reserved for the future MVC admin area (Task 19+); only the scheme + login path are wired now.
         options.LoginPath = "/admin/login";
+        options.AccessDeniedPath = "/admin/denied";
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.SlidingExpiration = true;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
     });
 
 builder.Services.AddAuthorization(options =>
@@ -127,6 +148,8 @@ if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Seed:En
 // wraps the authentication/authorization middleware and any controller-level throws.
 app.UseMiddleware<AppExceptionMiddleware>();
 
+app.UseStaticFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -134,6 +157,8 @@ app.UseAuthorization();
 app.UseRequestLocalization();
 
 app.MapControllers();
+app.MapControllerRoute("adminArea", "{area:exists}/{controller=Home}/{action=Index}/{id?}");
+app.MapGet("/", ctx => { ctx.Response.Redirect("/admin"); return Task.CompletedTask; });
 app.MapHub<DashboardHub>("/hubs/dashboard");
 
 await app.RunAsync();

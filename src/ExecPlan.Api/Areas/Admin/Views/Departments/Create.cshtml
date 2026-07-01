@@ -1,0 +1,17 @@
+@model ExecPlan.Api.Areas.Admin.Models.DeptVm
+<h1 class="h4 mb-3">@Localizer["Dept.Add"]</h1>
+<div class="ep-card p-4">
+  <form method="post" action="/admin/departments/create">
+    @Html.AntiForgeryToken()
+    <div class="mb-3">
+      <label class="form-label">@Localizer["Dept.Name"]</label>
+      <input class="form-control" name="Name" value="@Model.Name" required/>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">@Localizer["Users.Organization"]</label>
+      <select class="form-select" name="OrganizationId" asp-items="Model.Orgs"></select>
+    </div>
+    <button class="btn btn-primary ep-primary" type="submit">@Localizer["Common.Save"]</button>
+    <a class="btn btn-secondary" href="/admin/departments">@Localizer["Common.Cancel"]</a>
+  </form>
+</div>

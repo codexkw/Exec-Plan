@@ -1,8 +1,10 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using ExecPlan.Api.Auth;
 using ExecPlan.Application.Abstractions;
 using ExecPlan.Domain.Entities;
 using ExecPlan.Domain.Enums;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
@@ -29,8 +31,15 @@ namespace ExecPlan.Api.Hubs;
 /// connection) rather than the request-scoped <c>ICurrentUser</c>/<c>IHttpContextAccessor</c>, which is
 /// not reliably populated during hub method invocations. The claim types match exactly what
 /// <c>JwtTokenFactory</c> emits and <c>CurrentUser</c> reads (<c>sub</c> + <c>ClaimTypes.Role</c>).</para>
+///
+/// <para><b>Dual auth schemes (Task 16):</b> <c>Program.cs</c> registers JWT bearer as the SOLE default
+/// authenticate/challenge scheme, so a bare <c>[Authorize]</c> here only ever authenticates a JWT — a
+/// cookie-only browser session (the real MVC dashboard, <c>dashboard.js</c>) could never connect. Listing
+/// both schemes explicitly is purely additive: the mobile app's JWT (carried on the <c>access_token</c>
+/// query string, see <c>Program.cs</c>'s <c>OnMessageReceived</c>) keeps working unchanged, and the
+/// <see cref="AuthPolicies.AdminCookieScheme"/> cookie now also authenticates the same hub.</para>
 /// </summary>
-[Authorize]
+[Authorize(AuthenticationSchemes = $"{JwtBearerDefaults.AuthenticationScheme},{AuthPolicies.AdminCookieScheme}")]
 public sealed class DashboardHub : Hub
 {
     private readonly IUnitOfWork _uow;

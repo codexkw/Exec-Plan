@@ -17,15 +17,27 @@ public sealed class AppException : Exception
 
     public Kind ErrorKind { get; }
 
-    private AppException(Kind kind, string message) : base(message) => ErrorKind = kind;
+    /// <summary>
+    /// Optional stable, machine-readable error code (e.g. <c>"NoOneOnDuty"</c>) the HTML admin surface
+    /// maps to a localized <c>AppError.&lt;Code&gt;</c> resx message instead of rendering the raw (English)
+    /// <see cref="Exception.Message"/>. Null for exceptions that were never given one — those fall back to
+    /// <c>AppError.Generic</c>. The <c>/api</c> JSON surface keeps using <see cref="Exception.Message"/>.
+    /// </summary>
+    public string? Code { get; }
 
-    public static AppException NotFound(string message = "The requested resource was not found.") => new(Kind.NotFound, message);
+    private AppException(Kind kind, string message, string? code) : base(message)
+    {
+        ErrorKind = kind;
+        Code = code;
+    }
 
-    public static AppException Forbidden(string message = "You are not allowed to perform this action.") => new(Kind.Forbidden, message);
+    public static AppException NotFound(string message = "The requested resource was not found.", string? code = null) => new(Kind.NotFound, message, code);
 
-    public static AppException Unauthorized(string message = "Invalid credentials or token.") => new(Kind.Unauthorized, message);
+    public static AppException Forbidden(string message = "You are not allowed to perform this action.", string? code = null) => new(Kind.Forbidden, message, code);
 
-    public static AppException Conflict(string message = "The request conflicts with the current state.") => new(Kind.Conflict, message);
+    public static AppException Unauthorized(string message = "Invalid credentials or token.", string? code = null) => new(Kind.Unauthorized, message, code);
 
-    public static AppException Validation(string message = "The request is invalid.") => new(Kind.Validation, message);
+    public static AppException Conflict(string message = "The request conflicts with the current state.", string? code = null) => new(Kind.Conflict, message, code);
+
+    public static AppException Validation(string message = "The request is invalid.", string? code = null) => new(Kind.Validation, message, code);
 }

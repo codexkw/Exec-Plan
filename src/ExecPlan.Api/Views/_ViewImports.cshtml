@@ -1,0 +1,12 @@
+@using ExecPlan.Api
+@using ExecPlan.Api.Resources
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Microsoft.Extensions.Localization
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@* IStringLocalizer<SharedResource> (not IViewLocalizer): IViewLocalizer resolves resources by the
+   EXECUTING VIEW's own path/name (e.g. "Views.Shared._Layout"), not by the SharedResource marker type,
+   so every @Localizer["Key"] would silently fall back to the raw key string (no per-view resx files
+   exist — every translation lives in one shared SharedResource.ar.resx/.en.resx). Binding directly to
+   SharedResource matches how AddDataAnnotationsLocalization is already wired (Program.cs) and is what
+   actually makes @Localizer["Key"] resolve the real translated text. *@
+@inject IStringLocalizer<SharedResource> Localizer
