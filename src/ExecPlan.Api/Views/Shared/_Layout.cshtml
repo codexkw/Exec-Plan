@@ -22,7 +22,10 @@
         <button class="btn btn-sm btn-outline-light" type="submit">@Localizer["Lang.Toggle"]</button>
       </form>
       @if (User?.Identity?.IsAuthenticated == true) {
-        <form method="post" action="/admin/logout"><button class="btn btn-sm btn-outline-light">@Localizer["Nav.Logout"]</button></form>
+        <form method="post" action="/admin/logout">
+          @Html.AntiForgeryToken()
+          <button class="btn btn-sm btn-outline-light">@Localizer["Nav.Logout"]</button>
+        </form>
       }
     </div>
   </nav>
