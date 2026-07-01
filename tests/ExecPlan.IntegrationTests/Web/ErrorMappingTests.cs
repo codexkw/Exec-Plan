@@ -73,6 +73,40 @@ public class ErrorMappingTests : IClassFixture<TestAppFactory>
     }
 
     [Fact]
+    public async Task Html_unauthorized_redirects_to_login()
+    {
+        // Uses WebTestHelpers.NewClient (no auto-redirect, https base) so the raw 302 + Location can be
+        // asserted directly instead of following it — this is the returnUrl-escaping branch of
+        // AppExceptionMiddleware.RedirectHtml (AppException.Kind.Unauthorized).
+        var client = WebTestHelpers.NewClient(_factory);
+
+        var res = await client.GetAsync("/admin/_throw/unauthorized");
+
+        res.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        res.Headers.Location!.ToString().Should().StartWith("/admin/login?returnUrl=");
+    }
+
+    [Fact]
+    public async Task Html_validation_shows_message()
+    {
+        // Covers the middleware's Validation/Conflict HTML branch: redirect to /admin/error?msg=<escaped
+        // ex.Message>, then follow it manually to confirm ErrorPageController.Error echoes that message
+        // via ViewBag.Msg into the rendered page (Error.cshtml).
+        var client = WebTestHelpers.NewClient(_factory);
+
+        var res = await client.GetAsync("/admin/_throw/validation");
+
+        res.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        var location = res.Headers.Location!.ToString();
+        location.Should().StartWith("/admin/error?msg=");
+
+        var errorPage = await client.GetAsync(location);
+        errorPage.StatusCode.Should().Be(HttpStatusCode.BadRequest); // ErrorPageController.Error sets 400
+        var body = await DecodedBodyAsync(errorPage);
+        body.Should().Contain("Test validation (ThrowController).");
+    }
+
+    [Fact]
     public async Task Html_unhandled_non_app_exception_redirects_to_generic_error()
     {
         // An unknown {kind} makes ThrowController throw a plain ArgumentOutOfRangeException (not an
