@@ -17,6 +17,7 @@
     <span class="navbar-brand text-white">@Localizer["App.Title"]</span>
     <div class="ms-auto d-flex align-items-center gap-2">
       <form method="post" action="/admin/language">
+        @Html.AntiForgeryToken()
         <input type="hidden" name="culture" value="@(isRtl ? "en" : "ar")"/>
         <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString"/>
         <button class="btn btn-sm btn-outline-light" type="submit">@Localizer["Lang.Toggle"]</button>
