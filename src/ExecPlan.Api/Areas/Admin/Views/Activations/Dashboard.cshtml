@@ -50,15 +50,50 @@
     </div>
   </div>
 
-  @* Action bar: placeholder/disabled only in this task (Task 14) — the real POST endpoints
-     (run-escalation/broadcast/close) and their antiforgery-protected forms are Task 15. Gated on
-     CanAct (SystemAdmin/PlanManager) and the activation still being Active. *@
+  @if (TempData["toast"] is string toast)
+  {
+    <div class="alert alert-info" role="alert" data-toast="true">@Localizer["Dash.ToastPrefix"]: @toast</div>
+  }
+
+  @* Action bar: real antiforgery-protected POST forms (Task 15) — run-escalation/broadcast/close.
+     Gated on CanAct (SystemAdmin/PlanManager) and the activation still being Active. *@
   @if (Model.CanAct && Model.Dto.Status == ActivationStatus.Active)
   {
-    <div class="d-flex gap-2 mb-3">
-      <button type="button" class="btn btn-outline-secondary" disabled title="@Localizer["Dash.Escalate"]">@Localizer["Dash.Escalate"]</button>
-      <button type="button" class="btn btn-outline-secondary" disabled title="@Localizer["Dash.Broadcast"]">@Localizer["Dash.Broadcast"]</button>
-      <button type="button" class="btn btn-outline-danger" disabled title="@Localizer["Dash.CloseConfirm"]">@Localizer["Dash.Close"]</button>
+    <div class="d-flex gap-2 mb-3" data-action-bar="true">
+      <form method="post" action="/admin/activations/@Model.Dto.ActivationId/run-escalation" class="d-inline">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-outline-secondary">@Localizer["Dash.Escalate"]</button>
+      </form>
+
+      <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#broadcastModal">@Localizer["Dash.Broadcast"]</button>
+
+      <form method="post" action="/admin/activations/@Model.Dto.ActivationId/close" class="d-inline"
+            onsubmit="return confirm('@Localizer["Dash.CloseConfirm"]');">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-outline-danger">@Localizer["Dash.Close"]</button>
+      </form>
+    </div>
+
+    <div class="modal fade" id="broadcastModal" tabindex="-1" aria-hidden="true" aria-labelledby="broadcastModalLabel">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form method="post" action="/admin/activations/@Model.Dto.ActivationId/broadcast">
+            @Html.AntiForgeryToken()
+            <div class="modal-header">
+              <h5 class="modal-title" id="broadcastModalLabel">@Localizer["Dash.Broadcast"]</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <label class="form-label" for="broadcastBody">@Localizer["Dash.BroadcastBody"]</label>
+              <textarea id="broadcastBody" name="body" class="form-control" rows="4" required></textarea>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@Localizer["Common.Cancel"]</button>
+              <button type="submit" class="btn btn-primary">@Localizer["Dash.Send"]</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   }
 

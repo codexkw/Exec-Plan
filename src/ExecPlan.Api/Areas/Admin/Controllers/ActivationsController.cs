@@ -1,8 +1,11 @@
 using ExecPlan.Api.Areas.Admin.Models;
 using ExecPlan.Api.Auth;
 using ExecPlan.Application.Abstractions;
+using ExecPlan.Application.Broadcast;
 using ExecPlan.Application.Common;
 using ExecPlan.Application.Dashboard;
+using ExecPlan.Application.Escalation;
+using ExecPlan.Application.Execution;
 using ExecPlan.Domain.Entities;
 using ExecPlan.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -20,9 +23,11 @@ namespace ExecPlan.Api.Areas.Admin.Controllers;
 /// <see cref="IDashboardService"/> itself stays actor-agnostic (Manager/Admin reads and the close-summary
 /// reuse it as-is) — the authorization lives here, not in the service. The SAME guard runs before BOTH
 /// <see cref="Dashboard"/> and <see cref="Snapshot"/> so a leader cannot bypass the HTML gate by hitting
-/// the JSON endpoint directly. Task 15 adds the action-bar POST endpoints (run-escalation/broadcast/
-/// close) the view already renders disabled/placeholder for; Task 16 adds the SignalR-driven
-/// <c>dashboard.js</c> client the view already references.
+/// the JSON endpoint directly. Task 15 adds the action-bar POST endpoints (<see cref="RunEscalation"/>/
+/// <see cref="Broadcast"/>/<see cref="Close"/>) the view rendered disabled/placeholder for, plus
+/// <see cref="Summary"/> (the static post-close view — §16 "no live updates"); every new action is
+/// <c>ManagerOrAdmin</c>-only (never TeamLeader), on top of the class-level role gate. Task 16 adds the
+/// SignalR-driven <c>dashboard.js</c> client the view already references.
 /// </summary>
 [Area("Admin")]
 [Route("admin/activations")]
@@ -32,12 +37,24 @@ public sealed class ActivationsController : Controller
     private readonly IDashboardService _dash;
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUser _me;
+    private readonly IEscalationService _esc;
+    private readonly BroadcastService _broadcast;
+    private readonly ExecutionService _exec;
 
-    public ActivationsController(IDashboardService dash, IUnitOfWork uow, ICurrentUser me)
+    public ActivationsController(
+        IDashboardService dash,
+        IUnitOfWork uow,
+        ICurrentUser me,
+        IEscalationService esc,
+        BroadcastService broadcast,
+        ExecutionService exec)
     {
         _dash = dash;
         _uow = uow;
         _me = me;
+        _esc = esc;
+        _broadcast = broadcast;
+        _exec = exec;
     }
 
     /// <summary>
@@ -125,5 +142,59 @@ public sealed class ActivationsController : Controller
     {
         await EnsureMayViewAsync(id, ct); // same guard — dashboard.js (Task 16) polls this
         return Json(await _dash.GetSnapshotAsync(id, ct));
+    }
+
+    /// <summary>
+    /// Runs one manual escalation cycle (design §5.4). Manager/Admin only — no "own teams" scoping here,
+    /// matching the brief's action bar (a TeamLeader never sees these buttons in the first place,
+    /// <c>DashboardVm.CanAct</c>). Stashes a plain (non-localized, numeric) result summary in
+    /// <c>TempData["toast"]</c> for the redirected-to dashboard to render.
+    /// </summary>
+    [HttpPost("{id:guid}/run-escalation")]
+    [Authorize(AuthenticationSchemes = AuthPolicies.AdminCookieScheme, Policy = AuthPolicies.ManagerOrAdmin)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RunEscalation(Guid id, CancellationToken ct)
+    {
+        var r = await _esc.RunCycleAsync(id, ct);
+        TempData["toast"] = $"+{r.AttemptsAdded}/{r.Inducted}";
+        return Redirect($"/admin/activations/{id}");
+    }
+
+    /// <summary>Sends a broadcast to every participant (design §5.6, FR-BRD-1). Manager/Admin only.</summary>
+    [HttpPost("{id:guid}/broadcast")]
+    [Authorize(AuthenticationSchemes = AuthPolicies.AdminCookieScheme, Policy = AuthPolicies.ManagerOrAdmin)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Broadcast(Guid id, string body, CancellationToken ct)
+    {
+        await _broadcast.BroadcastAsync(id, body, ct);
+        return Redirect($"/admin/activations/{id}");
+    }
+
+    /// <summary>Closes the activation and redirects to its static post-close Summary. Manager/Admin only.</summary>
+    [HttpPost("{id:guid}/close")]
+    [Authorize(AuthenticationSchemes = AuthPolicies.AdminCookieScheme, Policy = AuthPolicies.ManagerOrAdmin)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Close(Guid id, CancellationToken ct)
+    {
+        await _exec.CloseAsync(id, ct);
+        return Redirect($"/admin/activations/{id}/summary");
+    }
+
+    /// <summary>
+    /// The static final-state view of a Closed activation (§16 "no live updates" — no action bar, no
+    /// realtime script section). Still-Active activations bounce back to the live Dashboard. Manager/Admin
+    /// only, same as the other new actions in this task.
+    /// </summary>
+    [HttpGet("{id:guid}/summary")]
+    [Authorize(AuthenticationSchemes = AuthPolicies.AdminCookieScheme, Policy = AuthPolicies.ManagerOrAdmin)]
+    public async Task<IActionResult> Summary(Guid id, CancellationToken ct)
+    {
+        var dto = await _dash.GetSnapshotAsync(id, ct);
+        if (dto.Status != ActivationStatus.Closed)
+        {
+            return Redirect($"/admin/activations/{id}");
+        }
+
+        return View(new DashboardVm(dto, false));
     }
 }

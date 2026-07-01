@@ -391,6 +391,15 @@
   <data name="Dash.Title" xml:space="preserve">
     <value>لوحة المتابعة الحية</value>
   </data>
+  <data name="Dash.BroadcastBody" xml:space="preserve">
+    <value>نص الرسالة</value>
+  </data>
+  <data name="Dash.Send" xml:space="preserve">
+    <value>إرسال</value>
+  </data>
+  <data name="Dash.ToastPrefix" xml:space="preserve">
+    <value>نتيجة دورة التصعيد</value>
+  </data>
   <data name="Activations.Title" xml:space="preserve">
     <value>الأنشطة النشطة</value>
   </data>
@@ -399,6 +408,9 @@
   </data>
   <data name="Summary.Title" xml:space="preserve">
     <value>الملخص</value>
+  </data>
+  <data name="Summary.ClosedNote" xml:space="preserve">
+    <value>تم إغلاق هذا التفعيل. فيما يلي النتائج النهائية.</value>
   </data>
   <data name="Error.NotFound" xml:space="preserve">
     <value>العنصر غير موجود</value>
