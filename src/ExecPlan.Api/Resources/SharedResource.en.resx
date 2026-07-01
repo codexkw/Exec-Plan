@@ -202,6 +202,9 @@
   <data name="Plans.ActivateConfirm" xml:space="preserve">
     <value>Are you sure you want to activate this plan?</value>
   </data>
+  <data name="Plans.ActivateDraftHint" xml:space="preserve">
+    <value>Complete the plan wizard to make it Ready before activating.</value>
+  </data>
   <data name="Plans.Status" xml:space="preserve">
     <value>Status</value>
   </data>

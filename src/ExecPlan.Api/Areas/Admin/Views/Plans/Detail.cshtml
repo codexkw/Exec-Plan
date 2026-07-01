@@ -40,7 +40,23 @@
   </dl>
 </div>
 
-<!-- activate: Task 13 -->
+@if (TempData["activateError"] is string activateError)
+{
+  <div class="alert alert-danger" role="alert">@activateError</div>
+}
+
+@if (Model.Status == PlanStatus.Ready)
+{
+  <form method="post" action="/admin/plans/@Model.Id/activate" class="mb-3"
+        onsubmit="return confirm('@Localizer["Plans.ActivateConfirm"]');">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-launch">@Localizer["Plans.Activate"]</button>
+  </form>
+}
+else
+{
+  <p class="text-muted mb-3">@Localizer["Plans.ActivateDraftHint"]</p>
+}
 
 @if (Model.ActiveActivationId is Guid activationId)
 {

@@ -1,6 +1,7 @@
 using ExecPlan.Api.Areas.Admin.Models;
 using ExecPlan.Api.Auth;
 using ExecPlan.Application.Abstractions;
+using ExecPlan.Application.Activation;
 using ExecPlan.Application.Common;
 using ExecPlan.Domain.Entities;
 using ExecPlan.Domain.Enums;
@@ -10,15 +11,21 @@ using Microsoft.AspNetCore.Mvc;
 namespace ExecPlan.Api.Areas.Admin.Controllers;
 
 /// <summary>
-/// "My Plans" list + read-only plan detail for the MVC admin area (Task 8). Class gate is
-/// <see cref="AuthPolicies.ManagerOrAdmin"/>: <see cref="Index"/> scopes the list to
+/// "My Plans" list + read-only plan detail + Activate for the MVC admin area (Tasks 8, 13). Class gate
+/// is <see cref="AuthPolicies.ManagerOrAdmin"/>: <see cref="Index"/> scopes the list to
 /// <see cref="Plan.CreatedByUserId"/> == <see cref="ICurrentUser.UserId"/> for a manager, or every plan
 /// for a <see cref="UserRole.SystemAdmin"/>. <see cref="Detail"/> assembles its team/member/task
 /// read-back from separate <c>ListAsync</c> calls per collection (no EF <c>.Include()</c> here — that
 /// stays inside the Application repository abstraction) and throws <see cref="AppException.NotFound"/>
 /// for an unknown id, which <c>AppExceptionMiddleware</c> turns into a redirect to the shared NotFound
-/// view. The Create-Plan wizard is Tasks 9-12 (<c>PlanWizardController</c>) and the Activate action is
-/// Task 13 — this controller intentionally has only Index/Detail.
+/// view. The Create-Plan wizard is Tasks 9-12 (<c>PlanWizardController</c>).
+/// <see cref="Activate"/> (Task 13) delegates to <see cref="IActivationService.ActivateAsync"/> in
+/// process (never HTTP) and does NOT catch <see cref="AppException.Kind.NotFound"/>/
+/// <see cref="AppException.Kind.Forbidden"/> — those propagate to <c>AppExceptionMiddleware</c>, which
+/// redirects to <c>/admin/notfound</c>/<c>/admin/denied</c> respectively. Only
+/// <see cref="AppException.Kind.Conflict"/> (the common "no one on duty"/"already active" case) and,
+/// defensively, <see cref="AppException.Kind.Validation"/> are caught here and turned into a redirect
+/// back to Detail with a <c>TempData["activateError"]</c> message the view renders as an alert.
 /// </summary>
 [Area("Admin")]
 [Route("admin/plans")]
@@ -27,11 +34,13 @@ public sealed class PlansController : Controller
 {
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUser _currentUser;
+    private readonly IActivationService _activation;
 
-    public PlansController(IUnitOfWork uow, ICurrentUser currentUser)
+    public PlansController(IUnitOfWork uow, ICurrentUser currentUser, IActivationService activation)
     {
         _uow = uow;
         _currentUser = currentUser;
+        _activation = activation;
     }
 
     [HttpGet("")]
@@ -110,5 +119,21 @@ public sealed class PlansController : Controller
             ActiveActivationId = activeActivation?.Id,
         };
         return View(vm);
+    }
+
+    [HttpPost("{id:guid}/activate")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Activate(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            var activationId = await _activation.ActivateAsync(id, _currentUser.UserId!.Value, ct);
+            return Redirect($"/admin/activations/{activationId}");
+        }
+        catch (AppException ex) when (ex.ErrorKind is AppException.Kind.Conflict or AppException.Kind.Validation)
+        {
+            TempData["activateError"] = ex.Message;
+            return Redirect($"/admin/plans/{id}");
+        }
     }
 }

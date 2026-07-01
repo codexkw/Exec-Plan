@@ -202,6 +202,9 @@
   <data name="Plans.ActivateConfirm" xml:space="preserve">
     <value>هل أنت متأكد من تفعيل هذه الخطة؟</value>
   </data>
+  <data name="Plans.ActivateDraftHint" xml:space="preserve">
+    <value>أكمل معالج الخطة حتى تصبح "جاهزة" قبل التفعيل.</value>
+  </data>
   <data name="Plans.Status" xml:space="preserve">
     <value>الحالة</value>
   </data>
