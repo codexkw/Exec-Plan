@@ -1,0 +1,55 @@
+@using ExecPlan.Domain.Enums
+@model ExecPlan.Api.Areas.Admin.Models.UserEditVm
+<h1 class="h4 mb-3">@Localizer["Common.Edit"] — @Model.UserName</h1>
+<div class="ep-card p-4">
+  <form method="post" action="/admin/users/@Model.Id/edit">
+    @Html.AntiForgeryToken()
+    <div class="mb-3">
+      <label class="form-label">@Localizer["Login.UserName"]</label>
+      <input class="form-control" name="UserName" value="@Model.UserName" required/>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">@Localizer["Users.FullName"]</label>
+      <input class="form-control" name="FullName" value="@Model.FullName"/>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">@Localizer["Users.Phone"]</label>
+      <input class="form-control" name="Phone" value="@Model.Phone"/>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">@Localizer["Login.Password"]</label>
+      <input class="form-control" type="password" name="Password"/>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">@Localizer["Users.Role"]</label>
+      <select class="form-select" name="Role">
+        @foreach (var role in Enum.GetValues<UserRole>())
+        {
+          <option value="@role" selected="@(role == Model.Role)">@Localizer["Role." + role]</option>
+        }
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">@Localizer["Users.Organization"]</label>
+      <select class="form-select" name="OrganizationId" asp-items="Model.Orgs"></select>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">@Localizer["Users.Department"]</label>
+      <select class="form-select" name="DepartmentId" asp-items="Model.Depts">
+        <option value="">@Localizer["Users.NoDepartment"]</option>
+      </select>
+    </div>
+    <div class="form-check mb-3">
+      @* Checkbox posted BEFORE its hidden "false" fallback: ASP.NET Core's SimpleTypeModelBinder binds
+         a bool from the FIRST value of a same-name multi-value form field. Checked → wire order is
+         "true" (checkbox) then "false" (hidden) → binds true. Unchecked → only the hidden posts
+         ("false") → binds false. (Same trick asp-for's checkbox tag helper uses, replicated here
+         since this codebase's views bind by plain `name=` rather than `asp-for`.) *@
+      <input class="form-check-input" type="checkbox" name="IsActive" value="true" id="isActive" checked="@Model.IsActive"/>
+      <input type="hidden" name="IsActive" value="false"/>
+      <label class="form-check-label" for="isActive">@Localizer["Users.Active"]</label>
+    </div>
+    <button class="btn btn-primary ep-primary" type="submit">@Localizer["Common.Save"]</button>
+    <a class="btn btn-secondary" href="/admin/users">@Localizer["Common.Cancel"]</a>
+  </form>
+</div>

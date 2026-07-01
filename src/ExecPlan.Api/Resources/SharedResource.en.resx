@@ -145,6 +145,27 @@
   <data name="Users.Add" xml:space="preserve">
     <value>Add user</value>
   </data>
+  <data name="Users.Organization" xml:space="preserve">
+    <value>Organization</value>
+  </data>
+  <data name="Users.Department" xml:space="preserve">
+    <value>Department</value>
+  </data>
+  <data name="Users.NoDepartment" xml:space="preserve">
+    <value>No department</value>
+  </data>
+  <data name="Role.SystemAdmin" xml:space="preserve">
+    <value>System admin</value>
+  </data>
+  <data name="Role.PlanManager" xml:space="preserve">
+    <value>Plan manager</value>
+  </data>
+  <data name="Role.TeamLeader" xml:space="preserve">
+    <value>Team leader</value>
+  </data>
+  <data name="Role.TeamMember" xml:space="preserve">
+    <value>Team member</value>
+  </data>
   <data name="Dept.Title" xml:space="preserve">
     <value>Departments</value>
   </data>
