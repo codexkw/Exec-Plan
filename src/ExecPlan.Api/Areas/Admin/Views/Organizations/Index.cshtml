@@ -1,0 +1,25 @@
+@model ExecPlan.Api.Areas.Admin.Models.OrgListVm
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">@Localizer["Org.Title"]</h1>
+  @if (Model.CanWrite)
+  {
+    <a class="btn btn-primary ep-primary" href="/admin/organizations/create">@Localizer["Org.Add"]</a>
+  }
+</div>
+<div class="ep-card p-3">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>@Localizer["Org.Name"]</th>
+      </tr>
+    </thead>
+    <tbody>
+      @foreach (var o in Model.Organizations)
+      {
+        <tr>
+          <td>@o.Name</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

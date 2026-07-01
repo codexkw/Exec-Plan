@@ -1,0 +1,13 @@
+@model ExecPlan.Api.Areas.Admin.Models.OrgVm
+<h1 class="h4 mb-3">@Localizer["Org.Add"]</h1>
+<div class="ep-card p-4">
+  <form method="post" action="/admin/organizations/create">
+    @Html.AntiForgeryToken()
+    <div class="mb-3">
+      <label class="form-label">@Localizer["Org.Name"]</label>
+      <input class="form-control" name="Name" value="@Model.Name" required/>
+    </div>
+    <button class="btn btn-primary ep-primary" type="submit">@Localizer["Common.Save"]</button>
+    <a class="btn btn-secondary" href="/admin/organizations">@Localizer["Common.Cancel"]</a>
+  </form>
+</div>
