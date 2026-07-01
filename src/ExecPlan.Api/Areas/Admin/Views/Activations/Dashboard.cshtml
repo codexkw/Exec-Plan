@@ -1,0 +1,136 @@
+@model ExecPlan.Api.Areas.Admin.Models.DashboardVm
+@using ExecPlan.Domain.Enums
+<div data-activation-id="@Model.Dto.ActivationId">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">@Localizer["Dash.Title"]</h1>
+    <a class="btn btn-secondary" href="/admin">@Localizer["Common.Back"]</a>
+  </div>
+
+  <div class="row mb-3 g-3">
+    <div class="col">
+      <div class="counter-tile" data-counter="total" data-value="@Model.Dto.TotalParticipants">
+        <div class="n">@Model.Dto.TotalParticipants</div>
+        <div class="lbl">@Localizer["Dash.Total"]</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="counter-tile" data-counter="pending" data-value="@Model.Dto.PendingCount">
+        <div class="n">@Model.Dto.PendingCount</div>
+        <div class="lbl">@Localizer["Dash.Pending"]</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="counter-tile ready" data-counter="ready" data-value="@Model.Dto.ReadyCount">
+        <div class="n">@Model.Dto.ReadyCount</div>
+        <div class="lbl">@Localizer["Dash.Ready"]</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="counter-tile escalated" data-counter="escalated" data-value="@Model.Dto.EscalatedCount">
+        <div class="n">@Model.Dto.EscalatedCount</div>
+        <div class="lbl">@Localizer["Dash.Escalated"]</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="counter-tile" data-counter="inducted" data-value="@Model.Dto.InductedCount">
+        <div class="n">@Model.Dto.InductedCount</div>
+        <div class="lbl">@Localizer["Dash.Inducted"]</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ep-card p-3 mb-3 d-flex gap-4">
+    <div>
+      <strong>@Localizer["Dash.ResponseRate"]</strong>:
+      <span data-rate="response">@((int)Math.Round(Model.Dto.ResponseRate * 100))%</span>
+    </div>
+    <div>
+      <strong>@Localizer["Dash.TaskRate"]</strong>:
+      <span data-rate="task">@((int)Math.Round(Model.Dto.TaskCompletionRate * 100))%</span>
+    </div>
+  </div>
+
+  @* Action bar: placeholder/disabled only in this task (Task 14) — the real POST endpoints
+     (run-escalation/broadcast/close) and their antiforgery-protected forms are Task 15. Gated on
+     CanAct (SystemAdmin/PlanManager) and the activation still being Active. *@
+  @if (Model.CanAct && Model.Dto.Status == ActivationStatus.Active)
+  {
+    <div class="d-flex gap-2 mb-3">
+      <button type="button" class="btn btn-outline-secondary" disabled title="@Localizer["Dash.Escalate"]">@Localizer["Dash.Escalate"]</button>
+      <button type="button" class="btn btn-outline-secondary" disabled title="@Localizer["Dash.Broadcast"]">@Localizer["Dash.Broadcast"]</button>
+      <button type="button" class="btn btn-outline-danger" disabled title="@Localizer["Dash.CloseConfirm"]">@Localizer["Dash.Close"]</button>
+    </div>
+  }
+
+  <h2 class="h5">@Localizer["Dash.Teams"]</h2>
+  @if (!Model.Dto.Teams.Any())
+  {
+    <p class="text-muted">@Localizer["Plans.NoTeams"]</p>
+  }
+  else
+  {
+    <table class="table ep-card">
+      <thead>
+        <tr>
+          <th>@Localizer["Dash.Teams"]</th>
+          <th>@Localizer["Plans.Members"]</th>
+          <th>@Localizer["Dash.Ready"]</th>
+          <th>@Localizer["Dash.TaskRate"]</th>
+        </tr>
+      </thead>
+      <tbody>
+        @{
+          var teamCount = Model.Dto.Teams.Count;
+        }
+        @for (var i = 0; i < teamCount; i++)
+        {
+          var t = Model.Dto.Teams[i];
+          // Teams is already Score-descending from the service — rendered in that exact order,
+          // never re-sorted here. First row = best-performing, last row (when >1 team) = most delayed.
+          var rankClass = i == 0 ? "rank-best" : (i == teamCount - 1 && teamCount > 1 ? "rank-delayed" : "");
+          <tr class="@rankClass" data-team="@t.TeamName">
+            <td>@t.TeamName</td>
+            <td>@t.Members</td>
+            <td>@t.ReadyCount</td>
+            <td>@t.TasksDone / @t.TasksTotal</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+
+  <h2 class="h5">@Localizer["Dash.Overdue"]</h2>
+  @if (!Model.Dto.Overdue.Any())
+  {
+    <p class="text-muted">&mdash;</p>
+  }
+  else
+  {
+    <ul class="list-group mb-3">
+      @foreach (var o in Model.Dto.Overdue)
+      {
+        <li class="list-group-item text-danger">@o.Title</li>
+      }
+    </ul>
+  }
+
+  <h2 class="h5">@Localizer["Dash.Events"]</h2>
+  @if (!Model.Dto.Events.Any())
+  {
+    <p class="text-muted">&mdash;</p>
+  }
+  else
+  {
+    <ul class="list-group">
+      @foreach (var e in Model.Dto.Events)
+      {
+        <li class="list-group-item">@e.Text</li>
+      }
+    </ul>
+  }
+</div>
+
+@section scripts {
+  <script src="/lib/signalr/signalr.min.js"></script>
+  <script src="/js/dashboard.js"></script>
+}

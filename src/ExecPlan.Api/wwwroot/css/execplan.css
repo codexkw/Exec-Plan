@@ -18,4 +18,5 @@ body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;background:var(--ep
 .badge-draft{background:transparent;border:1px solid var(--ep-amber-d);color:var(--ep-amber-d);}
 .counter-tile{border-radius:.75rem;padding:1rem;text-align:center;background:#fff;box-shadow:0 2px 8px rgba(13,36,64,.08);}
 .counter-tile .n{font-size:2rem;font-weight:600;line-height:1;} .counter-tile.ready .n{color:var(--ep-green);} .counter-tile.escalated .n{color:var(--ep-red);}
+.rank-best{border-inline-start:4px solid var(--ep-green);} .rank-delayed{border-inline-start:4px solid var(--ep-red);}
 [dir="rtl"] body{letter-spacing:normal;}

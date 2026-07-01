@@ -388,6 +388,15 @@
   <data name="Dash.CloseConfirm" xml:space="preserve">
     <value>Are you sure you want to close this activation?</value>
   </data>
+  <data name="Dash.Title" xml:space="preserve">
+    <value>Live Dashboard</value>
+  </data>
+  <data name="Activations.Title" xml:space="preserve">
+    <value>Active Activations</value>
+  </data>
+  <data name="Activations.Empty" xml:space="preserve">
+    <value>You have no active activations right now.</value>
+  </data>
   <data name="Summary.Title" xml:space="preserve">
     <value>Summary</value>
   </data>

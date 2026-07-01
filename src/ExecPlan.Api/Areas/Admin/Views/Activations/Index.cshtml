@@ -1,0 +1,32 @@
+@model ExecPlan.Api.Areas.Admin.Models.LeaderActivationsVm
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">@Localizer["Activations.Title"]</h1>
+</div>
+<div class="ep-card p-3">
+  @if (!Model.Activations.Any())
+  {
+    <p class="text-muted mb-0">@Localizer["Activations.Empty"]</p>
+  }
+  else
+  {
+    <table class="table">
+      <thead>
+        <tr>
+          <th>@Localizer["Review.Shift"]</th>
+          <th>@Localizer["Review.Date"]</th>
+          <th>@Localizer["Common.Actions"]</th>
+        </tr>
+      </thead>
+      <tbody>
+        @foreach (var a in Model.Activations)
+        {
+          <tr>
+            <td>@Localizer["Shift." + a.Shift]</td>
+            <td>@a.RosterDate.ToString("yyyy-MM-dd")</td>
+            <td><a href="/admin/activations/@a.Id">@Localizer["Plans.WatchDashboard"]</a></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

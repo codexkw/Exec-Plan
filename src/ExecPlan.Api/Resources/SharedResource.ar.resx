@@ -388,6 +388,15 @@
   <data name="Dash.CloseConfirm" xml:space="preserve">
     <value>هل أنت متأكد من إغلاق هذا التفعيل؟</value>
   </data>
+  <data name="Dash.Title" xml:space="preserve">
+    <value>لوحة المتابعة الحية</value>
+  </data>
+  <data name="Activations.Title" xml:space="preserve">
+    <value>الأنشطة النشطة</value>
+  </data>
+  <data name="Activations.Empty" xml:space="preserve">
+    <value>لا توجد أنشطة نشطة تقودها حالياً</value>
+  </data>
   <data name="Summary.Title" xml:space="preserve">
     <value>الملخص</value>
   </data>

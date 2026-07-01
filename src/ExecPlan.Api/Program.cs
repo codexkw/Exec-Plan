@@ -2,6 +2,8 @@ using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
 using ExecPlan.Api.Auth;
 using ExecPlan.Api.Hubs;
 using ExecPlan.Api.Middleware;
@@ -34,6 +36,17 @@ builder.Services.AddControllersWithViews()
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddSignalR();
+
+// Arabic-first (CLAUDE.md convention 7): .NET's default HtmlEncoder is conservative and renders every
+// non-Basic-Latin character (i.e. every Arabic string this whole admin area renders) as a numeric HTML
+// character reference (e.g. "الإجمالي" -> "&#x627;&#x644;..."). That is valid, correctly-rendering HTML,
+// but needlessly bloats every Arabic-first page and defeats anything that inspects the raw response body
+// for literal Arabic text (e.g. an integration test). Allowing the full Unicode range keeps the
+// mandatory HTML-metacharacter escaping (<>&"') while stopping the extra non-ASCII escaping.
+builder.Services.AddWebEncoders(options =>
+{
+    options.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All);
+});
 
 // Arabic-first localization (CLAUDE.md convention 7): supported ar/en, default ar (RTL), resolved
 // cookie → query → accept-language.
