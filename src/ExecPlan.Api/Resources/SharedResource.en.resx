@@ -442,4 +442,76 @@
   <data name="AppError.BroadcastEmpty" xml:space="preserve">
     <value>Broadcast message text is required.</value>
   </data>
+  <data name="Nav.Overview" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="Nav.Manage" xml:space="preserve">
+    <value>Manage</value>
+  </data>
+  <data name="Nav.Dashboard" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="Dashboard.Title" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="Dashboard.Subtitle" xml:space="preserve">
+    <value>Overview of plans, activations and readiness</value>
+  </data>
+  <data name="Dashboard.PlansTotal" xml:space="preserve">
+    <value>Total plans</value>
+  </data>
+  <data name="Dashboard.ReadyPlans" xml:space="preserve">
+    <value>Ready plans</value>
+  </data>
+  <data name="Dashboard.DraftPlans" xml:space="preserve">
+    <value>Drafts</value>
+  </data>
+  <data name="Dashboard.ActiveActivations" xml:space="preserve">
+    <value>Active activations</value>
+  </data>
+  <data name="Dashboard.Users" xml:space="preserve">
+    <value>Users</value>
+  </data>
+  <data name="Dashboard.Departments" xml:space="preserve">
+    <value>Departments</value>
+  </data>
+  <data name="Dashboard.Organizations" xml:space="preserve">
+    <value>Organizations</value>
+  </data>
+  <data name="Dashboard.Teams" xml:space="preserve">
+    <value>Teams</value>
+  </data>
+  <data name="Dashboard.ReadinessRate" xml:space="preserve">
+    <value>Readiness rate</value>
+  </data>
+  <data name="Dashboard.TeamReadiness" xml:space="preserve">
+    <value>Team readiness across active activations</value>
+  </data>
+  <data name="Dashboard.NoActiveParticipants" xml:space="preserve">
+    <value>No participants in active activations right now</value>
+  </data>
+  <data name="Dashboard.RecentActivations" xml:space="preserve">
+    <value>Recent activations</value>
+  </data>
+  <data name="Dashboard.NoActivations" xml:space="preserve">
+    <value>No activations yet</value>
+  </data>
+  <data name="Dashboard.QuickActions" xml:space="preserve">
+    <value>Quick actions</value>
+  </data>
+  <data name="Dashboard.NewPlan" xml:space="preserve">
+    <value>New plan</value>
+  </data>
+  <data name="Dashboard.ViewPlans" xml:space="preserve">
+    <value>View all plans</value>
+  </data>
+  <data name="Dashboard.ActivatedAt" xml:space="preserve">
+    <value>Activated</value>
+  </data>
+  <data name="Dashboard.StatusActive" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Dashboard.StatusClosed" xml:space="preserve">
+    <value>Closed</value>
+  </data>
 </root>

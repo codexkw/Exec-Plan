@@ -22,6 +22,11 @@ public interface IRepository<T> where T : BaseEntity
     Task<T?> FirstOrDefaultTrackedAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default);
     Task<List<T>> ListTrackedAsync(Expression<Func<T, bool>>? predicate = null, CancellationToken ct = default);
 
+    // Server-side count (no rows materialized) — for read-only aggregates like the admin dashboard,
+    // where loading whole tables via ListAsync just to call .Count would be wasteful. Expression is BCL,
+    // so this stays EF-free here; the EF CountAsync implementation lives in Infrastructure's Repository<T>.
+    Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null, CancellationToken ct = default);
+
     Task AddAsync(T entity, CancellationToken ct = default);
     Task AddRangeAsync(IEnumerable<T> entities, CancellationToken ct = default);
     void Remove(T entity);
