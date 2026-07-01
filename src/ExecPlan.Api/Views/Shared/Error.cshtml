@@ -1,0 +1,8 @@
+@{ string? msg = ViewBag.Msg; }
+<div class="row justify-content-center"><div class="col-md-4">
+  <div class="ep-card p-4 mt-5">
+    <h1 class="h4 mb-3">@Localizer["Error.Generic"]</h1>
+    @if (!string.IsNullOrEmpty(msg)) { <p class="text-muted">@msg</p> }
+    <a class="btn btn-secondary" href="/admin">@Localizer["Common.Back"]</a>
+  </div>
+</div></div>
