@@ -277,6 +277,21 @@
   <data name="Wizard.Finish" xml:space="preserve">
     <value>إنهاء</value>
   </data>
+  <data name="Teams.Name" xml:space="preserve">
+    <value>اسم الفريق</value>
+  </data>
+  <data name="Teams.Leader" xml:space="preserve">
+    <value>قائد الفريق</value>
+  </data>
+  <data name="Teams.NoLeader" xml:space="preserve">
+    <value>بدون قائد</value>
+  </data>
+  <data name="Teams.Add" xml:space="preserve">
+    <value>إضافة فريق</value>
+  </data>
+  <data name="Teams.AtLeastOneRequired" xml:space="preserve">
+    <value>أضف فريقاً واحداً على الأقل يحتوي على عضو واحد على الأقل قبل المتابعة.</value>
+  </data>
   <data name="Dash.Total" xml:space="preserve">
     <value>الإجمالي</value>
   </data>

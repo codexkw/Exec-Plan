@@ -53,6 +53,23 @@ public static class WebTestHelpers
     }
 
     /// <summary>
+    /// Same antiforgery-token dance as the <see cref="IDictionary{TKey,TValue}"/> overload above, but for
+    /// posts that need the SAME field name repeated (e.g. a multi-select's <c>MemberUserIds</c>), which a
+    /// <c>Dictionary&lt;string,string&gt;</c> cannot represent — last-key-wins would silently drop every
+    /// selection but the last. Pass an ordered list of key/value pairs instead (duplicates allowed); the
+    /// antiforgery token is appended as one more pair, and <see cref="FormUrlEncodedContent"/> preserves
+    /// every entry, repeats included, when it serializes the body.
+    /// </summary>
+    public static async Task<HttpResponseMessage> PostFormAsync(
+        HttpClient c, string getUrl, string postUrl, IEnumerable<KeyValuePair<string, string>> fields)
+    {
+        var token = await AntiForgeryTokenAsync(c, getUrl);
+        var all = fields.ToList();
+        all.Add(new KeyValuePair<string, string>("__RequestVerificationToken", token));
+        return await c.PostAsync(postUrl, new FormUrlEncodedContent(all));
+    }
+
+    /// <summary>
     /// Posts credentials to <c>/admin/login</c> using the antiforgery token scraped from that same page,
     /// and returns the same client (now cookie-authenticated on success, per the caller's redirect/OK
     /// check). Throws if the login endpoint responded with anything other than a redirect (success) or

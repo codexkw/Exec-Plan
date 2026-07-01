@@ -277,6 +277,21 @@
   <data name="Wizard.Finish" xml:space="preserve">
     <value>Finish</value>
   </data>
+  <data name="Teams.Name" xml:space="preserve">
+    <value>Team name</value>
+  </data>
+  <data name="Teams.Leader" xml:space="preserve">
+    <value>Team leader</value>
+  </data>
+  <data name="Teams.NoLeader" xml:space="preserve">
+    <value>No leader</value>
+  </data>
+  <data name="Teams.Add" xml:space="preserve">
+    <value>Add team</value>
+  </data>
+  <data name="Teams.AtLeastOneRequired" xml:space="preserve">
+    <value>Add at least one team with at least one member before continuing.</value>
+  </data>
   <data name="Dash.Total" xml:space="preserve">
     <value>Total</value>
   </data>
