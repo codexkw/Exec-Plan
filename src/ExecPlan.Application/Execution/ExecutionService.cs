@@ -216,7 +216,7 @@ public sealed class ExecutionService
 
         if (activation.Status == ActivationStatus.Closed)
         {
-            throw AppException.Conflict("This activation is already closed.");
+            throw AppException.Conflict("This activation is already closed.", "AlreadyClosed");
         }
 
         activation.Status = ActivationStatus.Closed;

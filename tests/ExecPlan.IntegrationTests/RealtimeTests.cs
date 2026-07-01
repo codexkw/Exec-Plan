@@ -29,6 +29,7 @@ namespace ExecPlan.IntegrationTests;
 /// the connection and joins, a member acknowledges over HTTP, and the manager receives the
 /// <c>DashboardUpdated</c> push.
 /// </summary>
+[Collection("WebHostSequential")]
 public class RealtimeTests : IClassFixture<TestAppFactory>
 {
     private readonly TestAppFactory _factory;

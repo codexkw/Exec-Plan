@@ -1,4 +1,6 @@
 using System.Net;
+using System.Runtime.CompilerServices;
+using System.Xml.Linq;
 using ExecPlan.Application.Auth;
 using ExecPlan.Domain.Entities;
 using ExecPlan.Domain.Enums;
@@ -22,6 +24,7 @@ namespace ExecPlan.IntegrationTests.Web;
 /// <see cref="ShiftAssignment"/> as on-duty when all three match the host's fixed clock's resolved
 /// shift; a Draft plan with no roster at all reproduces the service's common "no one on duty" Conflict.
 /// </summary>
+[Collection("WebHostSequential")]
 public class ActivateTests : IClassFixture<TestAppFactory>
 {
     private const string ManagerUserName = "activate-manager";
@@ -219,6 +222,21 @@ public class ActivateTests : IClassFixture<TestAppFactory>
         follow.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await follow.Content.ReadAsStringAsync();
         body.Should().Contain("alert-danger");
-        body.Should().Contain("No one is on duty for this shift.");
+        // The Arabic admin renders the LOCALIZED (ar) AppError.NoOneOnDuty message, never the raw English
+        // literal thrown from ActivationService (MUST-FIX 4).
+        body.Should().Contain(ResxValue("AppError.NoOneOnDuty"));
+        body.Should().NotContain("No one is on duty for this shift.");
+    }
+
+    /// <summary>Reads the ar value of a resx key so the assertion tracks the real localized string.</summary>
+    private static string ResxValue(string key, [CallerFilePath] string here = "")
+    {
+        var webDir = Path.GetDirectoryName(here)!; // .../tests/ExecPlan.IntegrationTests/Web
+        var repoRoot = Path.GetFullPath(Path.Combine(webDir, "..", "..", ".."));
+        var resxPath = Path.Combine(repoRoot, "src", "ExecPlan.Api", "Resources", "SharedResource.ar.resx");
+        var doc = XDocument.Load(resxPath);
+        return doc.Root!.Elements("data")
+            .First(e => (string)e.Attribute("name")! == key)
+            .Element("value")!.Value;
     }
 }

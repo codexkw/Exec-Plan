@@ -18,6 +18,7 @@ namespace ExecPlan.IntegrationTests.Web;
 /// <c>@Localizer[...]</c> now resolves genuine Arabic/English text instead of the raw resx key, and the
 /// tests should assert against that real text rather than just the dir/lang attributes.
 /// </summary>
+[Collection("WebHostSequential")]
 public class LocalizationTests : IClassFixture<TestAppFactory>
 {
     private readonly TestAppFactory _factory;

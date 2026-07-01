@@ -73,6 +73,9 @@
   <data name="Nav.Organizations" xml:space="preserve">
     <value>Organizations</value>
   </data>
+  <data name="Nav.Activations" xml:space="preserve">
+    <value>Activations</value>
+  </data>
   <data name="Nav.Logout" xml:space="preserve">
     <value>Logout</value>
   </data>
@@ -197,13 +200,13 @@
     <value>Plan type</value>
   </data>
   <data name="Plans.Activate" xml:space="preserve">
-    <value>Activate</value>
+    <value>Launch the Plan</value>
   </data>
   <data name="Plans.ActivateConfirm" xml:space="preserve">
-    <value>Are you sure you want to activate this plan?</value>
+    <value>Are you sure you want to launch this plan?</value>
   </data>
   <data name="Plans.ActivateDraftHint" xml:space="preserve">
-    <value>Complete the plan wizard to make it Ready before activating.</value>
+    <value>Complete the plan wizard to make it Ready before launching.</value>
   </data>
   <data name="Plans.Status" xml:space="preserve">
     <value>Status</value>
@@ -420,5 +423,23 @@
   </data>
   <data name="Error.Generic" xml:space="preserve">
     <value>An unexpected error occurred</value>
+  </data>
+  <data name="AppError.Generic" xml:space="preserve">
+    <value>The operation could not be completed.</value>
+  </data>
+  <data name="AppError.PlanAlreadyActive" xml:space="preserve">
+    <value>This plan is already active.</value>
+  </data>
+  <data name="AppError.NoOneOnDuty" xml:space="preserve">
+    <value>No one is on duty for this shift.</value>
+  </data>
+  <data name="AppError.EscalateClosed" xml:space="preserve">
+    <value>Cannot escalate a closed activation.</value>
+  </data>
+  <data name="AppError.AlreadyClosed" xml:space="preserve">
+    <value>This activation is already closed.</value>
+  </data>
+  <data name="AppError.BroadcastEmpty" xml:space="preserve">
+    <value>Broadcast message text is required.</value>
   </data>
 </root>

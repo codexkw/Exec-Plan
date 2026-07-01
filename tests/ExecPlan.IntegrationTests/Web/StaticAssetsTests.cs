@@ -5,6 +5,7 @@ using Xunit;
 
 namespace ExecPlan.IntegrationTests.Web;
 
+[Collection("WebHostSequential")]
 public class StaticAssetsTests : IClassFixture<TestAppFactory>
 {
     private readonly TestAppFactory _factory;

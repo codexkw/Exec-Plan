@@ -395,6 +395,21 @@ public class ExecutionAndBroadcastTests : IClassFixture<SqliteFixture>
         thrown.Which.ErrorKind.Should().Be(AppException.Kind.Forbidden);
     }
 
+    [Fact]
+    public async Task Broadcast_with_empty_body_throws_Validation()
+    {
+        var s = SeedScenario();
+        var cur = new FakeCurrentUser { UserId = s.ManagerId, Role = UserRole.PlanManager };
+
+        var act = async () => await NewBroadcast(cur).BroadcastAsync(s.ActivationId, "   ");
+
+        var thrown = await act.Should().ThrowAsync<AppException>();
+        thrown.Which.ErrorKind.Should().Be(AppException.Kind.Validation);
+
+        using var ctx = _fx.NewContext();
+        ctx.Set<BroadcastMessage>().Where(b => b.ActivationId == s.ActivationId).Should().BeEmpty();
+    }
+
     // --- BroadcastService robustness: unknown activation must not orphan a BroadcastMessage ---
 
     [Fact]

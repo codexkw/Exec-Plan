@@ -27,6 +27,7 @@ namespace ExecPlan.IntegrationTests.Web;
 /// <see cref="AcknowledgeService"/> (readiness tap) rather than through <c>ExecutionService</c>, which
 /// requires a request-scoped <see cref="ICurrentUser"/> that a bare DI scope does not provide.
 /// </summary>
+[Collection("WebHostSequential")]
 public class DashboardTests : IClassFixture<TestAppFactory>
 {
     private const string ManagerUserName = "dash-manager";
@@ -242,6 +243,28 @@ public class DashboardTests : IClassFixture<TestAppFactory>
         zuluIndex.Should().BeGreaterThan(-1);
         alphaIndex.Should().BeGreaterThan(-1);
         zuluIndex.Should().BeLessThan(alphaIndex, "the higher-scoring team must render first (best -> delayed)");
+    }
+
+    [Fact]
+    public async Task Dashboard_ranking_table_exposes_stable_tbody_id_and_keeps_localized_header()
+    {
+        // MUST-FIX 6: the live re-render must target the ranking table's own <tbody id="rank-tbody">
+        // so the localized <thead> (الفرق/الأعضاء/جاهز/معدل المهام) survives the first SignalR push/poll.
+        var activationId = await ArrangeActiveActivationAsync(
+            "Dashboard Tbody Id Plan",
+            ("Team Header", _leaderId, new[] { _member1Id }));
+
+        var client = WebTestHelpers.NewClient(_factory);
+        await WebTestHelpers.LoginAsync(client, ManagerUserName, Password);
+
+        var res = await client.GetAsync($"/admin/activations/{activationId}");
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await res.Content.ReadAsStringAsync();
+
+        body.Should().Contain("id=\"rank-tbody\"");
+        // The localized header is rendered (Dash.Teams column) — it lives in the SSR <thead>, outside
+        // the tbody the client replaces.
+        body.Should().Contain("<thead>");
     }
 
     [Fact]

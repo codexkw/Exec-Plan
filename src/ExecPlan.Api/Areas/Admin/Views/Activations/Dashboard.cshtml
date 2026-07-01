@@ -114,7 +114,9 @@
           <th>@Localizer["Dash.TaskRate"]</th>
         </tr>
       </thead>
-      <tbody>
+      @* rank-tbody: the live client (dashboard.js) replaces ONLY this tbody on each SignalR push/poll,
+         so the localized <thead> above survives the re-render (MUST-FIX 6). *@
+      <tbody id="rank-tbody">
         @{
           var teamCount = Model.Dto.Teams.Count;
         }

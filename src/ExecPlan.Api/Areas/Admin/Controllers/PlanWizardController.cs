@@ -2,6 +2,7 @@ using ExecPlan.Api.Areas.Admin.Models;
 using ExecPlan.Api.Auth;
 using ExecPlan.Application.Abstractions;
 using ExecPlan.Application.Common;
+using ExecPlan.Application.Shifts;
 using ExecPlan.Domain.Entities;
 using ExecPlan.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -27,12 +28,21 @@ public sealed class PlanWizardController : Controller
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUser _me;
     private readonly IStringLocalizer<Resources.SharedResource> _localizer;
+    private readonly IClock _clock;
+    private readonly KuwaitShiftCalculator _shiftCalc;
 
-    public PlanWizardController(IUnitOfWork uow, ICurrentUser me, IStringLocalizer<Resources.SharedResource> localizer)
+    public PlanWizardController(
+        IUnitOfWork uow,
+        ICurrentUser me,
+        IStringLocalizer<Resources.SharedResource> localizer,
+        IClock clock,
+        KuwaitShiftCalculator shiftCalc)
     {
         _uow = uow;
         _me = me;
         _localizer = localizer;
+        _clock = clock;
+        _shiftCalc = shiftCalc;
     }
 
     /// <summary>
@@ -317,6 +327,12 @@ public sealed class PlanWizardController : Controller
                 return View(await BuildTasksVmAsync(planId, ct));
             }
 
+            if (input.DurationMinutes <= 0)
+            {
+                ModelState.AddModelError(nameof(input.DurationMinutes), "required");
+                return View(await BuildTasksVmAsync(planId, ct));
+            }
+
             var template = new TaskTemplate
             {
                 TeamId = teamId,
@@ -431,9 +447,17 @@ public sealed class PlanWizardController : Controller
         var teamIds = teams.Select(t => t.Id).ToList();
         var memberships = await _uow.Repo<TeamMembership>().ListAsync(m => teamIds.Contains(m.TeamId), ct);
         var validMemberUserIds = memberships.Select(m => m.UserId).ToHashSet();
+        // Guard against cross-plan/mass-assignment: every posted row's TeamId AND (TeamId,UserId) pair
+        // must belong to THIS draft, so a crafted hidden field can't inject a ShiftAssignment into a
+        // foreign plan's team or against a non-member.
+        var validTeamIds = teams.Select(t => t.Id).ToHashSet();
+        var validPairs = memberships.Select(m => (m.TeamId, m.UserId)).ToHashSet();
 
         var rosterValid = roster.Count > 0
-            && roster.All(r => r.SubstituteForUserId is null || validMemberUserIds.Contains(r.SubstituteForUserId.Value));
+            && roster.All(r =>
+                validTeamIds.Contains(r.TeamId)
+                && validPairs.Contains((r.TeamId, r.UserId))
+                && (r.SubstituteForUserId is null || validMemberUserIds.Contains(r.SubstituteForUserId.Value)));
 
         if (!rosterValid)
         {
@@ -494,14 +518,18 @@ public sealed class PlanWizardController : Controller
                     .ToList()))
             .ToList();
 
-        var today = DateTime.UtcNow.Date;
+        // Seed each default roster row from the SAME shift the activation cycle will resolve on-duty rows
+        // against (KuwaitShiftCalculator.Resolve(IClock.UtcNow) — Band + RosterDate, incl. the Kuwait
+        // night-after-midnight → previous-day rule). Using the raw wall clock here instead would make a
+        // manager who accepts the defaults during Evening/Night create a roster that fails to activate.
+        var resolved = _shiftCalc.Resolve(_clock.UtcNow);
         var roster = memberships
             .Select(m => new RosterInput
             {
                 TeamId = m.TeamId,
                 UserId = m.UserId,
-                Shift = ShiftBand.Morning,
-                Date = today,
+                Shift = resolved.Band,
+                Date = resolved.RosterDate,
             })
             .ToList();
 

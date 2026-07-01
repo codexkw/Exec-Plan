@@ -36,6 +36,11 @@ public sealed class BroadcastService
 
     public async Task BroadcastAsync(Guid activationId, string body, CancellationToken ct = default)
     {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            throw AppException.Validation("Broadcast body is required.", "BroadcastEmpty");
+        }
+
         var isMgrAdmin = _cur.Role is UserRole.PlanManager or UserRole.SystemAdmin;
         if (!isMgrAdmin)
         {

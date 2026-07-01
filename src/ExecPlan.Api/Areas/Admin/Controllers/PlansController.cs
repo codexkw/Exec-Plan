@@ -7,6 +7,7 @@ using ExecPlan.Domain.Entities;
 using ExecPlan.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 
 namespace ExecPlan.Api.Areas.Admin.Controllers;
 
@@ -35,12 +36,21 @@ public sealed class PlansController : Controller
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUser _currentUser;
     private readonly IActivationService _activation;
+    private readonly IStringLocalizer<Resources.SharedResource> _localizer;
+    private readonly ILogger<PlansController> _logger;
 
-    public PlansController(IUnitOfWork uow, ICurrentUser currentUser, IActivationService activation)
+    public PlansController(
+        IUnitOfWork uow,
+        ICurrentUser currentUser,
+        IActivationService activation,
+        IStringLocalizer<Resources.SharedResource> localizer,
+        ILogger<PlansController> logger)
     {
         _uow = uow;
         _currentUser = currentUser;
         _activation = activation;
+        _localizer = localizer;
+        _logger = logger;
     }
 
     [HttpGet("")]
@@ -132,7 +142,13 @@ public sealed class PlansController : Controller
         }
         catch (AppException ex) when (ex.ErrorKind is AppException.Kind.Conflict or AppException.Kind.Validation)
         {
-            TempData["activateError"] = ex.Message;
+            // Localize by stable code (never render the raw English ex.Message on the Arabic admin); log
+            // the original server-side for ops.
+            _logger.LogInformation("Activate {Kind} (code={Code}): {Message}", ex.ErrorKind, ex.Code, ex.Message);
+            var localized = string.IsNullOrEmpty(ex.Code) ? null : _localizer["AppError." + ex.Code];
+            TempData["activateError"] = localized is null || localized.ResourceNotFound
+                ? _localizer["AppError.Generic"].Value
+                : localized.Value;
             return Redirect($"/admin/plans/{id}");
         }
     }

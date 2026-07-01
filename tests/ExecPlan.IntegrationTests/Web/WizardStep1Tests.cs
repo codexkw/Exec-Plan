@@ -14,6 +14,7 @@ namespace ExecPlan.IntegrationTests.Web;
 /// its own "admin" account, so this class seeds a Manager + Organization directly into the shared
 /// SQLite database, idempotently, the same pattern <c>UsersAdminTests</c>/<c>PlansListDetailTests</c> use.
 /// </summary>
+[Collection("WebHostSequential")]
 public class WizardStep1Tests : IClassFixture<TestAppFactory>
 {
     private const string ManagerUserName = "wizard-step1-manager";

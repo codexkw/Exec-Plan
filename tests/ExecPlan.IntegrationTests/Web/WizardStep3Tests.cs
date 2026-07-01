@@ -15,6 +15,7 @@ namespace ExecPlan.IntegrationTests.Web;
 /// use. Each test seeds its own <see cref="Plan"/> Draft with one <see cref="Team"/> (and a member)
 /// directly (bypassing steps 1-2) so tests don't interfere with each other.
 /// </summary>
+[Collection("WebHostSequential")]
 public class WizardStep3Tests : IClassFixture<TestAppFactory>
 {
     private const string ManagerUserName = "wizard-step3-manager";
@@ -128,6 +129,31 @@ public class WizardStep3Tests : IClassFixture<TestAppFactory>
 
         var body = await res.Content.ReadAsStringAsync();
         body.Should().Contain("Close affected roads");
+    }
+
+    [Fact]
+    public async Task Add_task_with_non_positive_duration_is_rejected()
+    {
+        var (planId, teamId) = SeedDraftWithTeam("WizardStep3 Zero Duration Plan", "Delta Team");
+
+        var client = WebTestHelpers.NewClient(_factory);
+        await WebTestHelpers.LoginAsync(client, ManagerUserName, Password);
+
+        var getUrl = $"/admin/plans/create/{planId}/tasks";
+        var res = await WebTestHelpers.PostFormAsync(client, getUrl, getUrl, new Dictionary<string, string>
+        {
+            ["intent"] = "add",
+            ["TeamId"] = teamId.ToString(),
+            ["Title"] = "Zero duration task",
+            ["Order"] = "1",
+            ["DurationMinutes"] = "0",
+        });
+
+        res.StatusCode.Should().Be(HttpStatusCode.OK); // re-render with a ModelState error
+
+        using var scope = _factory.Services.CreateScope();
+        var ctx = scope.ServiceProvider.GetRequiredService<ExecPlanDbContext>();
+        ctx.TaskTemplates.Where(t => t.TeamId == teamId).Should().BeEmpty();
     }
 
     [Fact]

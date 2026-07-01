@@ -39,21 +39,24 @@
     });
   }
 
-  // Re-renders mirror the SSR shape in Dashboard.cshtml closely enough for a live refresh; they are
-  // not required to reproduce the localized column headers (those stay static from first paint).
+  // Re-renders ONLY the ranking table's <tbody id="rank-tbody"> (rows-only), so the SSR-rendered,
+  // localized <thead> stays intact across pushes/polls (MUST-FIX 6). The `rank-best` (first) /
+  // `rank-delayed` (last, when >1 team) classes are re-applied here with the exact same best/last-index
+  // logic the Razor view uses — teams arrive already Score-descending from the service.
   function renderTeams(teams) {
     if (!teams || !teams.length) {
-      return '<p class="text-muted">&mdash;</p>';
+      return '';
     }
-    var rows = teams.map(function (t) {
-      return '<tr data-team="' + escapeHtml(t.teamName) + '">' +
+    var n = teams.length;
+    return teams.map(function (t, i) {
+      var rankClass = i === 0 ? 'rank-best' : (i === n - 1 && n > 1 ? 'rank-delayed' : '');
+      return '<tr class="' + rankClass + '" data-team="' + escapeHtml(t.teamName) + '">' +
         '<td>' + escapeHtml(t.teamName) + '</td>' +
         '<td>' + t.members + '</td>' +
         '<td>' + t.readyCount + '</td>' +
         '<td>' + t.tasksDone + ' / ' + t.tasksTotal + '</td>' +
         '</tr>';
     }).join('');
-    return '<table class="table ep-card"><tbody>' + rows + '</tbody></table>';
   }
 
   function renderOverdue(overdue) {
@@ -92,7 +95,7 @@
     setText('n-response', Math.round(dto.responseRate * 100) + '%');
     setText('n-taskrate', Math.round(dto.taskCompletionRate * 100) + '%');
 
-    setInner('rank-body', renderTeams(dto.teams));
+    setInner('rank-tbody', renderTeams(dto.teams));
     setInner('overdue-body', renderOverdue(dto.overdue));
     setInner('feed-body', renderFeed(dto.events));
   }

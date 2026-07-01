@@ -15,6 +15,7 @@ namespace ExecPlan.IntegrationTests.Web;
 /// <c>UsersAdminTests</c>/<c>AuthFlowTests</c>); each test then arranges its own Plan/Team/TeamMembership/
 /// TaskTemplate/PlanActivation rows so tests don't interfere with each other's list assertions.
 /// </summary>
+[Collection("WebHostSequential")]
 public class PlansListDetailTests : IClassFixture<TestAppFactory>
 {
     private const string ManagerUserName = "plans-list-manager";

@@ -33,6 +33,7 @@ namespace ExecPlan.IntegrationTests.Web;
 /// <c>/admin/plans</c> — same property under test (the cookie, not a specific downstream page), without
 /// depending on controllers this task doesn't build.
 /// </summary>
+[Collection("WebHostSequential")]
 public class AuthFlowTests : IClassFixture<TestAppFactory>
 {
     private const string Password = "Passw0rd!";

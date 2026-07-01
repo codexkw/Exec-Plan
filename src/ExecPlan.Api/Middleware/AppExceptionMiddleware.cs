@@ -92,7 +92,7 @@ public sealed class AppExceptionMiddleware
                && a.Contains("application/json") && !a.Contains("text/html"));
 
     /// <summary>Redirects an HTML request to the themed page matching <paramref name="ex"/>'s <see cref="AppException.ErrorKind"/>.</summary>
-    private static void RedirectHtml(HttpContext context, AppException ex)
+    private void RedirectHtml(HttpContext context, AppException ex)
     {
         if (context.Response.HasStarted)
         {
@@ -111,8 +111,12 @@ public sealed class AppExceptionMiddleware
             case AppException.Kind.NotFound:
                 context.Response.Redirect("/admin/notfound");
                 break;
-            default: // Validation / Conflict
-                context.Response.Redirect($"/admin/error?msg={Uri.EscapeDataString(ex.Message)}");
+            default: // Validation / Conflict — pass the machine-readable code; the raw (English) message is
+                     // NEVER rendered on the Arabic admin (the error page localizes AppError.<code> instead,
+                     // falling back to AppError.Generic when there is no code). Log the original for ops.
+                _logger.LogInformation(
+                    "Admin {Kind} surfaced (code={Code}): {Message}", ex.ErrorKind, ex.Code, ex.Message);
+                context.Response.Redirect($"/admin/error?code={Uri.EscapeDataString(ex.Code ?? string.Empty)}");
                 break;
         }
     }

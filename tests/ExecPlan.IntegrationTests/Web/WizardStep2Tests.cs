@@ -16,6 +16,7 @@ namespace ExecPlan.IntegrationTests.Web;
 /// use. Each test seeds its own <see cref="Plan"/> Draft directly (not by driving Step 1) so tests don't
 /// interfere with each other.
 /// </summary>
+[Collection("WebHostSequential")]
 public class WizardStep2Tests : IClassFixture<TestAppFactory>
 {
     private const string ManagerUserName = "wizard-step2-manager";

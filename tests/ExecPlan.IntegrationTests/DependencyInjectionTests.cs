@@ -16,6 +16,7 @@ namespace ExecPlan.IntegrationTests;
 /// forces its whole constructor dependency graph to be satisfied, so this is the durable guard that
 /// "every Application service exists and is DI-wired" (T16).
 /// </summary>
+[Collection("WebHostSequential")]
 public class DependencyInjectionTests : IClassFixture<TestAppFactory>
 {
     private readonly TestAppFactory _factory;

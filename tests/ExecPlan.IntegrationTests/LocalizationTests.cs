@@ -11,6 +11,7 @@ namespace ExecPlan.IntegrationTests;
 /// <c>RequestLocalizationOptions</c>, so the captured <c>.AspNetCore.Culture</c> cookie alone flips the
 /// resolved culture.
 /// </summary>
+[Collection("WebHostSequential")]
 public class LocalizationTests : IClassFixture<TestAppFactory>
 {
     private readonly TestAppFactory _factory;

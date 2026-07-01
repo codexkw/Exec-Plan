@@ -33,10 +33,15 @@
   <div class="container-fluid"><div class="row">
     @if (User?.Identity?.IsAuthenticated == true) {
       <aside class="col-2 ep-sidebar p-2">
-        <a href="/admin/plans">@Localizer["Nav.Plans"]</a>
-        <a href="/admin/users">@Localizer["Nav.Users"]</a>
-        <a href="/admin/departments">@Localizer["Nav.Departments"]</a>
-        <a href="/admin/organizations">@Localizer["Nav.Organizations"]</a>
+        @if (User.IsInRole(nameof(ExecPlan.Domain.Enums.UserRole.SystemAdmin)) || User.IsInRole(nameof(ExecPlan.Domain.Enums.UserRole.PlanManager))) {
+          <a href="/admin/plans">@Localizer["Nav.Plans"]</a>
+          <a href="/admin/users">@Localizer["Nav.Users"]</a>
+          <a href="/admin/departments">@Localizer["Nav.Departments"]</a>
+          <a href="/admin/organizations">@Localizer["Nav.Organizations"]</a>
+        }
+        else if (User.IsInRole(nameof(ExecPlan.Domain.Enums.UserRole.TeamLeader))) {
+          <a href="/admin/activations">@Localizer["Nav.Activations"]</a>
+        }
       </aside>
     }
     <main class="col p-4">@RenderBody()</main>

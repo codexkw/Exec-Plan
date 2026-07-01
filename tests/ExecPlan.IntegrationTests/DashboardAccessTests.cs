@@ -19,6 +19,7 @@ namespace ExecPlan.IntegrationTests;
 /// in the activation, or the request 403s. Manager/Admin remain unscoped. This file proves all three
 /// outcomes end-to-end over real HTTP against the hosted API.
 /// </summary>
+[Collection("WebHostSequential")]
 public class DashboardAccessTests : IClassFixture<TestAppFactory>
 {
     private readonly TestAppFactory _factory;

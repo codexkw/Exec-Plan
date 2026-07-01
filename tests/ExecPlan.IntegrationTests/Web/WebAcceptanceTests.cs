@@ -27,6 +27,7 @@ namespace ExecPlan.IntegrationTests.Web;
 /// to <see cref="TestAppFactory.FixedShift"/>'s <c>Band</c>/<c>RosterDate</c> instead of trusting the
 /// pre-filled defaults, exactly as <c>WizardStep4Tests</c>/<c>ActivateTests</c> already do.
 /// </summary>
+[Collection("WebHostSequential")]
 public class WebAcceptanceTests : IClassFixture<TestAppFactory>
 {
     private const string ManagerUserName = "webaccept-manager";

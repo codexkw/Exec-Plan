@@ -73,6 +73,9 @@
   <data name="Nav.Organizations" xml:space="preserve">
     <value>المؤسسات</value>
   </data>
+  <data name="Nav.Activations" xml:space="preserve">
+    <value>الأنشطة</value>
+  </data>
   <data name="Nav.Logout" xml:space="preserve">
     <value>تسجيل الخروج</value>
   </data>
@@ -197,13 +200,13 @@
     <value>نوع الخطة</value>
   </data>
   <data name="Plans.Activate" xml:space="preserve">
-    <value>تفعيل</value>
+    <value>إطلاق الخطة</value>
   </data>
   <data name="Plans.ActivateConfirm" xml:space="preserve">
-    <value>هل أنت متأكد من تفعيل هذه الخطة؟</value>
+    <value>هل أنت متأكد من إطلاق هذه الخطة؟</value>
   </data>
   <data name="Plans.ActivateDraftHint" xml:space="preserve">
-    <value>أكمل معالج الخطة حتى تصبح "جاهزة" قبل التفعيل.</value>
+    <value>أكمل معالج الخطة حتى تصبح "جاهزة" قبل الإطلاق.</value>
   </data>
   <data name="Plans.Status" xml:space="preserve">
     <value>الحالة</value>
@@ -420,5 +423,23 @@
   </data>
   <data name="Error.Generic" xml:space="preserve">
     <value>حدث خطأ غير متوقع</value>
+  </data>
+  <data name="AppError.Generic" xml:space="preserve">
+    <value>تعذّر إتمام العملية.</value>
+  </data>
+  <data name="AppError.PlanAlreadyActive" xml:space="preserve">
+    <value>هذه الخطة مُفعّلة بالفعل.</value>
+  </data>
+  <data name="AppError.NoOneOnDuty" xml:space="preserve">
+    <value>لا يوجد أحد في الخدمة لهذه النوبة.</value>
+  </data>
+  <data name="AppError.EscalateClosed" xml:space="preserve">
+    <value>لا يمكن تصعيد تفعيل مُغلق.</value>
+  </data>
+  <data name="AppError.AlreadyClosed" xml:space="preserve">
+    <value>هذا التفعيل مُغلق بالفعل.</value>
+  </data>
+  <data name="AppError.BroadcastEmpty" xml:space="preserve">
+    <value>نص الرسالة مطلوب.</value>
   </data>
 </root>

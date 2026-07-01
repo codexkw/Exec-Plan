@@ -20,6 +20,7 @@ namespace ExecPlan.IntegrationTests.Web;
 /// activation, which <c>DashboardService</c> reports via <c>AppException.NotFound</c>) authenticated as
 /// the seeded admin — proving the middleware's <c>/api/*</c> branch is untouched by this task.
 /// </summary>
+[Collection("WebHostSequential")]
 public class ErrorMappingTests : IClassFixture<TestAppFactory>
 {
     private readonly TestAppFactory _factory;
@@ -87,23 +88,25 @@ public class ErrorMappingTests : IClassFixture<TestAppFactory>
     }
 
     [Fact]
-    public async Task Html_validation_shows_message()
+    public async Task Html_validation_shows_localized_generic_message()
     {
-        // Covers the middleware's Validation/Conflict HTML branch: redirect to /admin/error?msg=<escaped
-        // ex.Message>, then follow it manually to confirm ErrorPageController.Error echoes that message
-        // via ViewBag.Msg into the rendered page (Error.cshtml).
+        // Covers the middleware's Validation/Conflict HTML branch: it now redirects to
+        // /admin/error?code=<AppException.Code> (NEVER the raw English ex.Message — MUST-FIX 4). The
+        // ThrowController's validation carries no code, so the error page falls back to the LOCALIZED
+        // AppError.Generic, and the raw English literal is never rendered.
         var client = WebTestHelpers.NewClient(_factory);
 
         var res = await client.GetAsync("/admin/_throw/validation");
 
         res.StatusCode.Should().Be(HttpStatusCode.Redirect);
         var location = res.Headers.Location!.ToString();
-        location.Should().StartWith("/admin/error?msg=");
+        location.Should().StartWith("/admin/error?code=");
 
         var errorPage = await client.GetAsync(location);
         errorPage.StatusCode.Should().Be(HttpStatusCode.BadRequest); // ErrorPageController.Error sets 400
         var body = await DecodedBodyAsync(errorPage);
-        body.Should().Contain("Test validation (ThrowController).");
+        body.Should().Contain(ResxValue("AppError.Generic"));
+        body.Should().NotContain("Test validation (ThrowController).");
     }
 
     [Fact]

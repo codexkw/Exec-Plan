@@ -128,13 +128,19 @@ public sealed class ActivationsController : Controller
         await EnsureMayViewAsync(id, ct); // Forbidden -> AppExceptionMiddleware -> /admin/denied
 
         var dto = await _dash.GetSnapshotAsync(id, ct);
+        var isManagerOrAdmin =
+            User.IsInRole(nameof(UserRole.SystemAdmin)) || User.IsInRole(nameof(UserRole.PlanManager));
         if (dto.Status == ActivationStatus.Closed)
         {
-            return Redirect($"/admin/activations/{id}/summary");
+            // DEC-28: /summary is Manager/Admin-only (PRD route table). A TeamLeader who legitimately
+            // views their own just-closed activation must land on their own /admin/activations landing,
+            // not get bounced to /admin/denied (which sending them to the gated /summary would cause).
+            return isManagerOrAdmin
+                ? Redirect($"/admin/activations/{id}/summary")
+                : Redirect("/admin/activations");
         }
 
-        return View(new DashboardVm(dto,
-            User.IsInRole(nameof(UserRole.SystemAdmin)) || User.IsInRole(nameof(UserRole.PlanManager))));
+        return View(new DashboardVm(dto, isManagerOrAdmin));
     }
 
     [HttpGet("{id:guid}/snapshot")]

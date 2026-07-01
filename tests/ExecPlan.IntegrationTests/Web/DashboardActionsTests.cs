@@ -29,6 +29,7 @@ namespace ExecPlan.IntegrationTests.Web;
 /// activation's only team), POSTs close with it, and asserts the 302 denied redirect plus that the
 /// activation is still Active in a fresh scope (the close never happened).
 /// </summary>
+[Collection("WebHostSequential")]
 public class DashboardActionsTests : IClassFixture<TestAppFactory>
 {
     private const string ManagerUserName = "actdash-manager";
@@ -230,6 +231,64 @@ public class DashboardActionsTests : IClassFixture<TestAppFactory>
 
         res.StatusCode.Should().Be(HttpStatusCode.Redirect);
         res.Headers.Location!.ToString().Should().Be($"/admin/activations/{activationId}");
+    }
+
+    [Fact]
+    public async Task Leader_viewing_own_closed_activation_redirects_to_activations()
+    {
+        // DEC-28: /summary stays Manager/Admin-only, so a TeamLeader hitting a Closed activation's
+        // dashboard must be sent to their own landing (/admin/activations), NOT bounced to /admin/denied
+        // (which redirecting them to the Manager/Admin-only /summary would have done).
+        var activationId = await ArrangeActiveActivationAsync("Actions Leader Closed Plan");
+
+        // Close it as the manager (leader may not close).
+        var managerClient = WebTestHelpers.NewClient(_factory);
+        await WebTestHelpers.LoginAsync(managerClient, ManagerUserName, Password);
+        var dashUrl = $"/admin/activations/{activationId}";
+        var closeRes = await WebTestHelpers.PostFormAsync(managerClient, dashUrl, $"{dashUrl}/close", new Dictionary<string, string>());
+        closeRes.StatusCode.Should().Be(HttpStatusCode.Redirect);
+
+        // The leader (who leads the activation's only team) now GETs their own just-closed activation.
+        var leaderClient = WebTestHelpers.NewClient(_factory);
+        await WebTestHelpers.LoginAsync(leaderClient, LeaderUserName, Password);
+        var res = await leaderClient.GetAsync(dashUrl);
+
+        res.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        res.Headers.Location!.ToString().Should().Be("/admin/activations");
+    }
+
+    [Fact]
+    public async Task Manager_viewing_closed_activation_redirects_to_summary()
+    {
+        var activationId = await ArrangeActiveActivationAsync("Actions Manager Closed Plan");
+
+        var client = WebTestHelpers.NewClient(_factory);
+        await WebTestHelpers.LoginAsync(client, ManagerUserName, Password);
+        var dashUrl = $"/admin/activations/{activationId}";
+        await WebTestHelpers.PostFormAsync(client, dashUrl, $"{dashUrl}/close", new Dictionary<string, string>());
+
+        var res = await client.GetAsync(dashUrl);
+
+        res.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        res.Headers.Location!.ToString().Should().Be($"{dashUrl}/summary");
+    }
+
+    [Fact]
+    public async Task Leader_landing_sidebar_shows_activations_and_hides_manager_links()
+    {
+        // The leader leads a team participating in an active activation, so /admin/activations renders
+        // their landing list (200) inside the shared layout + sidebar.
+        await ArrangeActiveActivationAsync("Actions Leader Sidebar Plan");
+
+        var client = WebTestHelpers.NewClient(_factory);
+        await WebTestHelpers.LoginAsync(client, LeaderUserName, Password);
+
+        var body = await client.GetStringAsync("/admin/activations");
+
+        body.Should().Contain("href=\"/admin/activations\"");     // leader-only nav link present
+        body.Should().NotContain("href=\"/admin/users\"");        // manager/admin-only links hidden
+        body.Should().NotContain("href=\"/admin/departments\"");
+        body.Should().NotContain("href=\"/admin/organizations\"");
     }
 
     [Fact]

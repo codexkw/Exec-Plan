@@ -18,6 +18,7 @@ namespace ExecPlan.IntegrationTests;
 /// asserting both HTTP status codes and parsed JSON at every step. This is the integration proof that
 /// the controllers + services + error middleware all wire together.
 /// </summary>
+[Collection("WebHostSequential")]
 public class AcceptanceFlowTests : IClassFixture<TestAppFactory>
 {
     private readonly TestAppFactory _factory;

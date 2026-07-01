@@ -4,6 +4,7 @@ using Xunit;
 
 namespace ExecPlan.IntegrationTests.Web;
 
+[Collection("WebHostSequential")]
 public class ShellTests : IClassFixture<TestAppFactory>
 {
     private readonly TestAppFactory _factory;

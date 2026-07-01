@@ -16,6 +16,7 @@ namespace ExecPlan.IntegrationTests.Web;
 /// user directly into the shared SQLite database, idempotently, the same pattern
 /// <c>AuthFlowTests.EnsureRoleUsersSeeded</c> / <c>UsersAdminTests.EnsureSeeded</c> use.
 /// </summary>
+[Collection("WebHostSequential")]
 public class OrgDeptAdminTests : IClassFixture<TestAppFactory>
 {
     private const string ManagerUserName = "orgdept-admin-manager";

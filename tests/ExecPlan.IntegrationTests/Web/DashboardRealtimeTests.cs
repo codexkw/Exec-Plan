@@ -38,6 +38,7 @@ namespace ExecPlan.IntegrationTests.Web;
 /// SignalR client issues, the generic analogue of the JWT test's <c>AccessTokenProvider</c>) — this is the
 /// real cookie-authenticated path, not the documented HTTP-snapshot-only fallback.</para>
 /// </summary>
+[Collection("WebHostSequential")]
 public class DashboardRealtimeTests : IClassFixture<TestAppFactory>
 {
     private const string ManagerUserName = "dash-rt-manager";
