@@ -9,31 +9,31 @@
   <div class="row mb-3 g-3">
     <div class="col">
       <div class="counter-tile" data-counter="total" data-value="@Model.Dto.TotalParticipants">
-        <div class="n">@Model.Dto.TotalParticipants</div>
+        <div class="n" id="n-total">@Model.Dto.TotalParticipants</div>
         <div class="lbl">@Localizer["Dash.Total"]</div>
       </div>
     </div>
     <div class="col">
       <div class="counter-tile" data-counter="pending" data-value="@Model.Dto.PendingCount">
-        <div class="n">@Model.Dto.PendingCount</div>
+        <div class="n" id="n-pending">@Model.Dto.PendingCount</div>
         <div class="lbl">@Localizer["Dash.Pending"]</div>
       </div>
     </div>
     <div class="col">
       <div class="counter-tile ready" data-counter="ready" data-value="@Model.Dto.ReadyCount">
-        <div class="n">@Model.Dto.ReadyCount</div>
+        <div class="n" id="n-ready">@Model.Dto.ReadyCount</div>
         <div class="lbl">@Localizer["Dash.Ready"]</div>
       </div>
     </div>
     <div class="col">
       <div class="counter-tile escalated" data-counter="escalated" data-value="@Model.Dto.EscalatedCount">
-        <div class="n">@Model.Dto.EscalatedCount</div>
+        <div class="n" id="n-escalated">@Model.Dto.EscalatedCount</div>
         <div class="lbl">@Localizer["Dash.Escalated"]</div>
       </div>
     </div>
     <div class="col">
       <div class="counter-tile" data-counter="inducted" data-value="@Model.Dto.InductedCount">
-        <div class="n">@Model.Dto.InductedCount</div>
+        <div class="n" id="n-inducted">@Model.Dto.InductedCount</div>
         <div class="lbl">@Localizer["Dash.Inducted"]</div>
       </div>
     </div>
@@ -42,11 +42,11 @@
   <div class="ep-card p-3 mb-3 d-flex gap-4">
     <div>
       <strong>@Localizer["Dash.ResponseRate"]</strong>:
-      <span data-rate="response">@((int)Math.Round(Model.Dto.ResponseRate * 100))%</span>
+      <span id="n-response" data-rate="response">@((int)Math.Round(Model.Dto.ResponseRate * 100))%</span>
     </div>
     <div>
       <strong>@Localizer["Dash.TaskRate"]</strong>:
-      <span data-rate="task">@((int)Math.Round(Model.Dto.TaskCompletionRate * 100))%</span>
+      <span id="n-taskrate" data-rate="task">@((int)Math.Round(Model.Dto.TaskCompletionRate * 100))%</span>
     </div>
   </div>
 
@@ -98,6 +98,7 @@
   }
 
   <h2 class="h5">@Localizer["Dash.Teams"]</h2>
+  <div id="rank-body">
   @if (!Model.Dto.Teams.Any())
   {
     <p class="text-muted">@Localizer["Plans.NoTeams"]</p>
@@ -133,8 +134,10 @@
       </tbody>
     </table>
   }
+  </div>
 
   <h2 class="h5">@Localizer["Dash.Overdue"]</h2>
+  <div id="overdue-body">
   @if (!Model.Dto.Overdue.Any())
   {
     <p class="text-muted">&mdash;</p>
@@ -148,8 +151,10 @@
       }
     </ul>
   }
+  </div>
 
   <h2 class="h5">@Localizer["Dash.Events"]</h2>
+  <div id="feed-body">
   @if (!Model.Dto.Events.Any())
   {
     <p class="text-muted">&mdash;</p>
@@ -163,6 +168,7 @@
       }
     </ul>
   }
+  </div>
 </div>
 
 @section scripts {
