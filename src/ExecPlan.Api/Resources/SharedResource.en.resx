@@ -313,6 +313,36 @@
   <data name="Tasks.AtLeastOneRequired" xml:space="preserve">
     <value>Add at least one task to at least one team before continuing.</value>
   </data>
+  <data name="Review.Roster" xml:space="preserve">
+    <value>Shift roster</value>
+  </data>
+  <data name="Review.PlanSummary" xml:space="preserve">
+    <value>Plan summary</value>
+  </data>
+  <data name="Review.Shift" xml:space="preserve">
+    <value>Shift</value>
+  </data>
+  <data name="Review.Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Review.Substitute" xml:space="preserve">
+    <value>Substitute</value>
+  </data>
+  <data name="Review.NoSubstitute" xml:space="preserve">
+    <value>No substitute</value>
+  </data>
+  <data name="Review.RosterInvalid" xml:space="preserve">
+    <value>Add at least one roster row; any substitute must be a member of this plan.</value>
+  </data>
+  <data name="Shift.Morning" xml:space="preserve">
+    <value>Morning</value>
+  </data>
+  <data name="Shift.Evening" xml:space="preserve">
+    <value>Evening</value>
+  </data>
+  <data name="Shift.Night" xml:space="preserve">
+    <value>Night</value>
+  </data>
   <data name="Dash.Total" xml:space="preserve">
     <value>Total</value>
   </data>

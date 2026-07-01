@@ -313,6 +313,36 @@
   <data name="Tasks.AtLeastOneRequired" xml:space="preserve">
     <value>أضف مهمة واحدة على الأقل لفريق واحد على الأقل قبل المتابعة.</value>
   </data>
+  <data name="Review.Roster" xml:space="preserve">
+    <value>جدول النوبات</value>
+  </data>
+  <data name="Review.PlanSummary" xml:space="preserve">
+    <value>ملخص الخطة</value>
+  </data>
+  <data name="Review.Shift" xml:space="preserve">
+    <value>النوبة</value>
+  </data>
+  <data name="Review.Date" xml:space="preserve">
+    <value>التاريخ</value>
+  </data>
+  <data name="Review.Substitute" xml:space="preserve">
+    <value>البديل</value>
+  </data>
+  <data name="Review.NoSubstitute" xml:space="preserve">
+    <value>بدون بديل</value>
+  </data>
+  <data name="Review.RosterInvalid" xml:space="preserve">
+    <value>أضف صفاً واحداً على الأقل في جدول النوبات؛ يجب أن يكون أي بديل عضواً في هذه الخطة.</value>
+  </data>
+  <data name="Shift.Morning" xml:space="preserve">
+    <value>صباحية</value>
+  </data>
+  <data name="Shift.Evening" xml:space="preserve">
+    <value>مسائية</value>
+  </data>
+  <data name="Shift.Night" xml:space="preserve">
+    <value>ليلية</value>
+  </data>
   <data name="Dash.Total" xml:space="preserve">
     <value>الإجمالي</value>
   </data>

@@ -109,6 +109,48 @@ public sealed class PlanWizardController : Controller
         return Redirect($"/admin/plans/create/{plan.Id}/teams");
     }
 
+    /// <summary>
+    /// Wizard step-navigation guard (Task 12): given the requested step number, checks that every
+    /// EARLIER step's completion prerequisite already holds for this draft, and returns a redirect to the
+    /// earliest unmet one's URL if not — so a manager can't deep-link straight to <c>/tasks</c> or
+    /// <c>/review</c> on a draft that never got a team+member or a task. Returns null once every
+    /// prerequisite up to <paramref name="step"/> holds, meaning the caller should render normally. Step
+    /// 2's only prerequisite is "this is still a Draft", already enforced by
+    /// <see cref="LoadDraftForEditAsync"/>, so requesting step 2 is a no-op here; the checks only start
+    /// biting from step 3 onward, re-checking the exact same "team with a member" / "team with a task"
+    /// rules the Teams/Tasks POST "next" intents already enforce server-side (so a crafted/replayed GET
+    /// can't reach a step those intents would have blocked).
+    /// </summary>
+    private async Task<IActionResult?> RequireStep(Guid planId, int step, CancellationToken ct)
+    {
+        if (step < 3)
+        {
+            return null;
+        }
+
+        var teams = await _uow.Repo<Team>().ListAsync(t => t.PlanId == planId, ct);
+        var teamIds = teams.Select(t => t.Id).ToList();
+        var memberships = await _uow.Repo<TeamMembership>().ListAsync(m => teamIds.Contains(m.TeamId), ct);
+
+        if (!teams.Any(t => memberships.Any(m => m.TeamId == t.Id)))
+        {
+            return Redirect($"/admin/plans/create/{planId}/teams");
+        }
+
+        if (step < 4)
+        {
+            return null;
+        }
+
+        var templates = await _uow.Repo<TaskTemplate>().ListAsync(t => teamIds.Contains(t.TeamId), ct);
+        if (!teams.Any(t => templates.Any(tt => tt.TeamId == t.Id)))
+        {
+            return Redirect($"/admin/plans/create/{planId}/tasks");
+        }
+
+        return null;
+    }
+
     [HttpGet("{id:guid}/teams")]
     public async Task<IActionResult> Teams(Guid id, CancellationToken ct)
     {
@@ -118,8 +160,14 @@ public sealed class PlanWizardController : Controller
             return shortCircuit;
         }
 
+        var stepGuard = await RequireStep(plan!.Id, 2, ct);
+        if (stepGuard is not null)
+        {
+            return stepGuard;
+        }
+
         ViewData["step"] = 2;
-        return View(await BuildTeamsVmAsync(plan!.Id, ct));
+        return View(await BuildTeamsVmAsync(plan.Id, ct));
     }
 
     /// <summary>
@@ -221,8 +269,14 @@ public sealed class PlanWizardController : Controller
             return shortCircuit;
         }
 
+        var stepGuard = await RequireStep(plan!.Id, 3, ct);
+        if (stepGuard is not null)
+        {
+            return stepGuard;
+        }
+
         ViewData["step"] = 3;
-        return View(await BuildTasksVmAsync(plan!.Id, ct));
+        return View(await BuildTasksVmAsync(plan.Id, ct));
     }
 
     /// <summary>
@@ -320,6 +374,150 @@ public sealed class PlanWizardController : Controller
                         .ToList(),
                 })
                 .ToList(),
+        };
+    }
+
+    [HttpGet("{id:guid}/review")]
+    public async Task<IActionResult> Review(Guid id, CancellationToken ct)
+    {
+        var (plan, shortCircuit) = await LoadDraftForEditAsync(id, ct);
+        if (shortCircuit is not null)
+        {
+            return shortCircuit;
+        }
+
+        var stepGuard = await RequireStep(plan!.Id, 4, ct);
+        if (stepGuard is not null)
+        {
+            return stepGuard;
+        }
+
+        ViewData["step"] = 4;
+        return View(await BuildReviewVmAsync(plan.Id, ct));
+    }
+
+    /// <summary>
+    /// Finish: validates FIRST — the posted <paramref name="roster"/> must be non-empty and every
+    /// <see cref="RosterInput.SubstituteForUserId"/> must reference a user who is actually a
+    /// <see cref="TeamMembership"/> of one of this draft's teams — before anything touches the change
+    /// tracker, so an invalid submission can never leave a partial roster staged even if the steps below
+    /// get reordered later. Once valid, stages one <see cref="ShiftAssignment"/> row per roster entry via
+    /// <see cref="IRepository{T}.AddAsync"/>, flips the tracked <paramref name="id"/> plan's
+    /// <see cref="PlanStatus"/> to <see cref="PlanStatus.Ready"/>, and commits both in the single
+    /// <see cref="IUnitOfWork.SaveChangesAsync"/> call below — so a reader can never observe a Ready plan
+    /// with no roster, or a rostered plan still stuck on Draft.
+    /// </summary>
+    [HttpPost("{id:guid}/review")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Review(Guid id, List<RosterInput> roster, CancellationToken ct)
+    {
+        var (plan, shortCircuit) = await LoadDraftForEditAsync(id, ct);
+        if (shortCircuit is not null)
+        {
+            return shortCircuit;
+        }
+
+        var planId = plan!.Id;
+        var stepGuard = await RequireStep(planId, 4, ct);
+        if (stepGuard is not null)
+        {
+            return stepGuard;
+        }
+
+        ViewData["step"] = 4;
+        roster ??= new List<RosterInput>();
+
+        var teams = await _uow.Repo<Team>().ListAsync(t => t.PlanId == planId, ct);
+        var teamIds = teams.Select(t => t.Id).ToList();
+        var memberships = await _uow.Repo<TeamMembership>().ListAsync(m => teamIds.Contains(m.TeamId), ct);
+        var validMemberUserIds = memberships.Select(m => m.UserId).ToHashSet();
+
+        var rosterValid = roster.Count > 0
+            && roster.All(r => r.SubstituteForUserId is null || validMemberUserIds.Contains(r.SubstituteForUserId.Value));
+
+        if (!rosterValid)
+        {
+            var vm = await BuildReviewVmAsync(planId, ct);
+            vm.Roster = roster;
+            ViewData["reviewBlocked"] = _localizer["Review.RosterInvalid"].Value;
+            return View(vm);
+        }
+
+        foreach (var row in roster)
+        {
+            await _uow.Repo<ShiftAssignment>().AddAsync(new ShiftAssignment
+            {
+                TeamId = row.TeamId,
+                UserId = row.UserId,
+                Shift = row.Shift,
+                Date = row.Date,
+                SubstituteForUserId = row.SubstituteForUserId,
+            }, ct);
+        }
+
+        plan.Status = PlanStatus.Ready;
+
+        await _uow.SaveChangesAsync(ct);
+        return Redirect($"/admin/plans/{planId}");
+    }
+
+    /// <summary>Assembles <see cref="WizardReviewVm"/>: one default <see cref="RosterInput"/> row per
+    /// existing <see cref="TeamMembership"/> of the draft (so the roster editor starts pre-populated with
+    /// every member who needs a shift) plus <see cref="ReviewReadback"/> — a read-only projection of the
+    /// whole plan (info/teams/members/tasks), the same team/membership/task lookups
+    /// <c>PlansController.Detail</c> uses for the read-only plan page.</summary>
+    private async Task<WizardReviewVm> BuildReviewVmAsync(Guid planId, CancellationToken ct)
+    {
+        var plan = await _uow.Repo<Plan>().FirstOrDefaultAsync(p => p.Id == planId, ct);
+        var teams = await _uow.Repo<Team>().ListAsync(t => t.PlanId == planId, ct);
+        var teamIds = teams.Select(t => t.Id).ToList();
+        var memberships = await _uow.Repo<TeamMembership>().ListAsync(m => teamIds.Contains(m.TeamId), ct);
+        var templates = await _uow.Repo<TaskTemplate>().ListAsync(t => teamIds.Contains(t.TeamId), ct);
+        var userIds = memberships.Select(m => m.UserId).Distinct().ToList();
+        var users = await _uow.Repo<User>().ListAsync(u => userIds.Contains(u.Id), ct);
+
+        var teamBlocks = teams
+            .OrderBy(t => t.Name)
+            .Select(t => new ReviewReadback.TeamBlock(
+                t.Id,
+                t.Name,
+                memberships
+                    .Where(m => m.TeamId == t.Id)
+                    .Select(m => new ReviewReadback.MemberRow(
+                        m.UserId,
+                        users.FirstOrDefault(u => u.Id == m.UserId)?.FullName ?? m.UserId.ToString()))
+                    .ToList(),
+                templates
+                    .Where(tt => tt.TeamId == t.Id)
+                    .OrderBy(tt => tt.Order)
+                    .Select(tt => tt.Title)
+                    .ToList()))
+            .ToList();
+
+        var today = DateTime.UtcNow.Date;
+        var roster = memberships
+            .Select(m => new RosterInput
+            {
+                TeamId = m.TeamId,
+                UserId = m.UserId,
+                Shift = ShiftBand.Morning,
+                Date = today,
+            })
+            .ToList();
+
+        return new WizardReviewVm
+        {
+            PlanId = planId,
+            Roster = roster,
+            Readback = new ReviewReadback
+            {
+                PlanName = plan!.Name,
+                Type = plan.Type,
+                Objective = plan.Objective,
+                Description = plan.Description,
+                Scope = plan.Scope,
+                Teams = teamBlocks,
+            },
         };
     }
 }
