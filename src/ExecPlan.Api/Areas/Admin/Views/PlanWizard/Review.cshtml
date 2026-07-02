@@ -20,6 +20,15 @@
   <div class="alert alert-warning">@blockedMessage</div>
 }
 
+<div class="alert alert-info d-flex justify-content-between align-items-center flex-wrap gap-2"
+     id="current-shift-hint" data-shift="@Model.CurrentShift" data-date="@Model.CurrentDate.ToString("yyyy-MM-dd")">
+  <span>
+    <strong>@Localizer["Review.CurrentShift"]:</strong>
+    @Localizer["Shift." + Model.CurrentShift] · @Model.CurrentDate.ToString("yyyy-MM-dd")
+  </span>
+  <button type="button" class="btn btn-sm btn-outline-primary" id="set-all-current">@Localizer["Review.SetAllToCurrent"]</button>
+</div>
+
 <h2 class="h5">@Localizer["Review.Roster"]</h2>
 <form method="post" action="/admin/plans/create/@Model.PlanId/review">
   @Html.AntiForgeryToken()
@@ -79,6 +88,23 @@
   }
   <button class="btn btn-primary ep-primary" type="submit">@Localizer["Wizard.Finish"]</button>
 </form>
+
+<script>
+  // "Set all rows to the current Kuwait shift": copies the resolved band/date (data- attributes on the
+  // hint banner) into every roster row's Shift <select> and Date <input>, so a manager can align the whole
+  // roster to "now" in one click before finishing/launching. Pure DOM, no dependencies.
+  (function () {
+    var hint = document.getElementById('current-shift-hint');
+    var btn = document.getElementById('set-all-current');
+    if (!hint || !btn) { return; }
+    btn.addEventListener('click', function () {
+      var shift = hint.getAttribute('data-shift');
+      var date = hint.getAttribute('data-date');
+      document.querySelectorAll('select[name$=".Shift"]').forEach(function (sel) { sel.value = shift; });
+      document.querySelectorAll('input[name$=".Date"]').forEach(function (inp) { inp.value = date; });
+    });
+  })();
+</script>
 
 <h2 class="h5 mt-4">@Localizer["Review.PlanSummary"]</h2>
 <div class="ep-card p-3 mb-3">

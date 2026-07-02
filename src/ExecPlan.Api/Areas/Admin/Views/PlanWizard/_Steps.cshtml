@@ -1,13 +1,25 @@
 @{
     var active = ViewData["step"] as int? ?? 1;
+    var planId = ViewData["planId"] as Guid?;
     var steps = new[] { "Wizard.Step1", "Wizard.Step2", "Wizard.Step3", "Wizard.Step4" };
+    var routes = new[] { "info", "teams", "tasks", "review" };
 }
 <ol class="ep-wizard-steps d-flex list-unstyled gap-3 mb-4">
     @for (var i = 0; i < steps.Length; i++)
     {
         var n = i + 1;
         <li class="ep-wizard-step @(n == active ? "active fw-bold" : "text-muted")">
-            @n. @Localizer[steps[i]]
+            @* When editing an existing plan (planId present) every step is reachable, so render the chips
+               as links; the server-side RequireStep guard still redirects a click that jumps past an unmet
+               prerequisite. On the create flow's step 1 the plan doesn't exist yet, so render plain text. *@
+            @if (planId is Guid pid)
+            {
+                <a href="/admin/plans/create/@pid/@routes[i]">@n. @Localizer[steps[i]]</a>
+            }
+            else
+            {
+                <span>@n. @Localizer[steps[i]]</span>
+            }
         </li>
     }
 </ol>

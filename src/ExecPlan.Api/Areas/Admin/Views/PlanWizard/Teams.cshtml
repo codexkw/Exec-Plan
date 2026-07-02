@@ -13,7 +13,16 @@ else
   @foreach (var team in Model.Teams)
   {
     <div class="ep-card p-3 mb-3">
-      <h3 class="h6">@team.Name</h3>
+      <div class="d-flex justify-content-between align-items-start">
+        <h3 class="h6 mb-0">@team.Name</h3>
+        <form method="post" action="/admin/plans/create/@Model.PlanId/teams"
+              onsubmit="return confirm('@Localizer["Common.RemoveConfirm"]');">
+          @Html.AntiForgeryToken()
+          <input type="hidden" name="intent" value="remove-team"/>
+          <input type="hidden" name="teamId" value="@team.Id"/>
+          <button class="btn btn-sm btn-outline-danger" type="submit">@Localizer["Teams.RemoveTeam"]</button>
+        </form>
+      </div>
       @{
         var leaderLabel = team.TeamLeaderUserId is Guid leaderId
           ? Model.AllUsers.FirstOrDefault(u => u.Id == leaderId)?.Label
@@ -24,10 +33,20 @@ else
         <p class="mb-1"><strong>@Localizer["Teams.Leader"]:</strong> @leaderLabel</p>
       }
       <strong>@Localizer["Plans.Members"]</strong>
-      <ul>
+      <ul class="list-unstyled mb-0">
         @foreach (var memberId in team.MemberUserIds)
         {
-          <li>@(Model.AllUsers.FirstOrDefault(u => u.Id == memberId)?.Label ?? memberId.ToString())</li>
+          <li class="d-flex justify-content-between align-items-center py-1">
+            <span>@(Model.AllUsers.FirstOrDefault(u => u.Id == memberId)?.Label ?? memberId.ToString())</span>
+            <form method="post" action="/admin/plans/create/@Model.PlanId/teams"
+                  onsubmit="return confirm('@Localizer["Common.RemoveConfirm"]');">
+              @Html.AntiForgeryToken()
+              <input type="hidden" name="intent" value="remove-member"/>
+              <input type="hidden" name="teamId" value="@team.Id"/>
+              <input type="hidden" name="userId" value="@memberId"/>
+              <button class="btn btn-sm btn-outline-danger" type="submit">@Localizer["Common.Remove"]</button>
+            </form>
+          </li>
         }
       </ul>
     </div>

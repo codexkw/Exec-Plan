@@ -1,9 +1,14 @@
 @model ExecPlan.Api.Areas.Admin.Models.WizardInfoVm
 @using ExecPlan.Domain.Enums
-<h1 class="h4 mb-3">@Localizer["Plans.New"]</h1>
+@{
+    // Edit flow when a plan id is present (posts to {id}/info and updates in place); create flow otherwise.
+    var planId = ViewData["planId"] as Guid?;
+    var formAction = planId is Guid pid ? $"/admin/plans/create/{pid}/info" : "/admin/plans/create";
+}
+<h1 class="h4 mb-3">@(planId is null ? Localizer["Plans.New"] : Localizer["Plans.Edit"])</h1>
 <partial name="_Steps" />
 <div class="ep-card p-4">
-  <form method="post" action="/admin/plans/create">
+  <form method="post" action="@formAction">
     @Html.AntiForgeryToken()
     <partial name="_ValidationSummary" />
     <div class="mb-3">

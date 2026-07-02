@@ -15,6 +15,9 @@ public sealed class WizardTeamsVm
 
 public sealed class TeamInput
 {
+    // Populated on the read-back so the "remove team / remove member" forms can identify the row;
+    // left default (Guid.Empty) on the "add a team" form post.
+    public Guid Id { get; set; }
     public string Name { get; set; } = "";
     public Guid? TeamLeaderUserId { get; set; }
     public List<Guid> MemberUserIds { get; set; } = new();

@@ -16,6 +16,13 @@ public sealed class WizardReviewVm
     public Guid PlanId { get; set; }
     public List<RosterInput> Roster { get; set; } = new();
     public ReviewReadback Readback { get; set; } = new();
+
+    // The Kuwait shift + roster date resolved for "now" (KuwaitShiftCalculator.Resolve(IClock.UtcNow)) —
+    // the exact band/date the activation cycle will match on-duty rows against. Surfaced so the roster
+    // step can show a "current Kuwait shift" hint and a "set all rows to it" control, so a manager always
+    // knows what to set for an immediate launch.
+    public ShiftBand CurrentShift { get; set; }
+    public DateTime CurrentDate { get; set; }
 }
 
 public sealed class RosterInput

@@ -526,4 +526,22 @@
   <data name="Validation.DurationRequired" xml:space="preserve">
     <value>Duration must be greater than zero minutes.</value>
   </data>
+  <data name="Plans.Edit" xml:space="preserve">
+    <value>Edit plan</value>
+  </data>
+  <data name="Common.Remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Common.RemoveConfirm" xml:space="preserve">
+    <value>Remove this item?</value>
+  </data>
+  <data name="Teams.RemoveTeam" xml:space="preserve">
+    <value>Remove team</value>
+  </data>
+  <data name="Review.CurrentShift" xml:space="preserve">
+    <value>Current shift (Kuwait time)</value>
+  </data>
+  <data name="Review.SetAllToCurrent" xml:space="preserve">
+    <value>Set all rows to the current shift</value>
+  </data>
 </root>

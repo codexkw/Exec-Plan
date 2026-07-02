@@ -21,5 +21,9 @@ public sealed class PlanDetailVm
     public IReadOnlyList<TeamBlock> Teams { get; init; } = Array.Empty<TeamBlock>();
     public Guid? ActiveActivationId { get; init; }
 
+    // True when the current user may re-open this plan in the edit wizard (its creator, or a SystemAdmin) —
+    // drives the "Edit plan" entry point on the detail page.
+    public bool CanEdit { get; init; }
+
     public sealed record TeamBlock(string Name, IReadOnlyList<string> Members, IReadOnlyList<string> Tasks);
 }

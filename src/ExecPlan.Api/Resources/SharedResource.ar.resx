@@ -526,4 +526,22 @@
   <data name="Validation.DurationRequired" xml:space="preserve">
     <value>يجب أن تكون المدة أكبر من صفر دقيقة.</value>
   </data>
+  <data name="Plans.Edit" xml:space="preserve">
+    <value>تعديل الخطة</value>
+  </data>
+  <data name="Common.Remove" xml:space="preserve">
+    <value>حذف</value>
+  </data>
+  <data name="Common.RemoveConfirm" xml:space="preserve">
+    <value>هل تريد حذف هذا العنصر؟</value>
+  </data>
+  <data name="Teams.RemoveTeam" xml:space="preserve">
+    <value>حذف الفريق</value>
+  </data>
+  <data name="Review.CurrentShift" xml:space="preserve">
+    <value>المناوبة الحالية (بتوقيت الكويت)</value>
+  </data>
+  <data name="Review.SetAllToCurrent" xml:space="preserve">
+    <value>ضبط جميع الصفوف على المناوبة الحالية</value>
+  </data>
 </root>

@@ -46,27 +46,21 @@ public sealed class PlanWizardController : Controller
     }
 
     /// <summary>
-    /// Reusable ownership guard for every wizard step (this task's <see cref="Teams"/> and the
-    /// Tasks/Review actions Tasks 11-12 add later): loads the plan by id TRACKED (so the caller can
-    /// mutate it and rely on a later <c>SaveChangesAsync</c> to persist that), and enforces that only
-    /// the Draft's own creator (or a SystemAdmin) may keep editing it, and only while it is still a
-    /// Draft. A finalized (non-Draft) plan isn't a "you're not allowed" case — it's "there's nothing left
-    /// to wizard here" — so that path returns a plain redirect to the read-only plan detail page rather
-    /// than an <see cref="AppException"/>. Missing plan / wrong owner ARE <see cref="AppException"/>s
-    /// (NotFound / Forbidden respectively), consistently mapped by <c>AppExceptionMiddleware</c> to the
-    /// shared NotFound/denied pages. Callers must check <c>ShortCircuit</c> first and return it as-is.
+    /// Reusable ownership guard shared by every editable wizard step (info/teams/tasks/review), for BOTH
+    /// the create flow (a fresh Draft) and the post-Ready EDIT flow. Loads the plan by id TRACKED (so a
+    /// step can mutate it and rely on a later <c>SaveChangesAsync</c>), and enforces that only the plan's
+    /// own creator (or a SystemAdmin) may edit it. Missing plan → <see cref="AppException"/> NotFound;
+    /// wrong owner → Forbidden (both mapped by <c>AppExceptionMiddleware</c> to the shared NotFound/denied
+    /// pages). Unlike the original Draft-only guard this replaced, a <see cref="PlanStatus.Ready"/> plan is
+    /// NOT redirected away — editing a finalized plan is allowed, because its template is independent of any
+    /// running activation's frozen snapshot, so template edits only affect FUTURE activations.
     /// </summary>
-    private async Task<(Plan? Plan, IActionResult? ShortCircuit)> LoadDraftForEditAsync(Guid id, CancellationToken ct)
+    private async Task<Plan> LoadPlanForEditAsync(Guid id, CancellationToken ct)
     {
         var plan = await _uow.Repo<Plan>().FirstOrDefaultTrackedAsync(p => p.Id == id, ct);
         if (plan is null)
         {
             throw AppException.NotFound($"Plan {id} was not found.");
-        }
-
-        if (plan.Status != PlanStatus.Draft)
-        {
-            return (null, Redirect($"/admin/plans/{id}"));
         }
 
         var isAdmin = User.IsInRole(nameof(UserRole.SystemAdmin));
@@ -75,7 +69,11 @@ public sealed class PlanWizardController : Controller
             throw AppException.Forbidden($"You do not own plan {id}.");
         }
 
-        return (plan, null);
+        // Every action that loads an EXISTING plan for editing can navigate between all four steps, so
+        // expose the id to _Steps.cshtml (which renders the step chips as links only when it is present)
+        // and to Info.cshtml (which posts to the {id}/info edit route rather than the create route).
+        ViewData["planId"] = plan.Id;
+        return plan;
     }
 
     [HttpGet("")]
@@ -120,13 +118,65 @@ public sealed class PlanWizardController : Controller
     }
 
     /// <summary>
+    /// Step 1 of the EDIT flow (as opposed to <see cref="Info(WizardInfoVm, CancellationToken)"/>, which
+    /// CREATES a new Draft): re-renders the shared <c>Info.cshtml</c> pre-filled from an existing plan
+    /// (Draft or Ready). <see cref="LoadPlanForEditAsync"/> enforces owner/admin and exposes the id so the
+    /// form posts back to <c>{id}/info</c>.
+    /// </summary>
+    [HttpGet("{id:guid}/info")]
+    public async Task<IActionResult> EditInfo(Guid id, CancellationToken ct)
+    {
+        var plan = await LoadPlanForEditAsync(id, ct);
+        ViewData["step"] = 1;
+        return View("Info", new WizardInfoVm
+        {
+            Name = plan.Name,
+            Type = plan.Type,
+            Objective = plan.Objective,
+            Description = plan.Description,
+            Scope = plan.Scope,
+        });
+    }
+
+    /// <summary>
+    /// Saves step-1 edits back onto an existing plan. Same required-Name validation as create; updates the
+    /// tracked plan's info fields in place (never touches Status/CreatedBy) and commits with one
+    /// <see cref="IUnitOfWork.SaveChangesAsync"/>, then advances to step 2.
+    /// </summary>
+    [HttpPost("{id:guid}/info")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditInfo(Guid id, WizardInfoVm vm, CancellationToken ct)
+    {
+        var plan = await LoadPlanForEditAsync(id, ct);
+
+        if (string.IsNullOrWhiteSpace(vm.Name))
+        {
+            ModelState.AddModelError(nameof(vm.Name), _localizer["Validation.NameRequired"].Value);
+        }
+
+        if (!ModelState.IsValid)
+        {
+            ViewData["step"] = 1;
+            return View("Info", vm);
+        }
+
+        plan.Name = vm.Name;
+        plan.Type = vm.Type;
+        plan.Objective = vm.Objective ?? "";
+        plan.Description = vm.Description ?? "";
+        plan.Scope = vm.Scope ?? "";
+        await _uow.SaveChangesAsync(ct);
+        return Redirect($"/admin/plans/create/{id}/teams");
+    }
+
+    /// <summary>
     /// Wizard step-navigation guard (Task 12): given the requested step number, checks that every
     /// EARLIER step's completion prerequisite already holds for this draft, and returns a redirect to the
     /// earliest unmet one's URL if not — so a manager can't deep-link straight to <c>/tasks</c> or
     /// <c>/review</c> on a draft that never got a team+member or a task. Returns null once every
     /// prerequisite up to <paramref name="step"/> holds, meaning the caller should render normally. Step
     /// 2's only prerequisite is "this is still a Draft", already enforced by
-    /// <see cref="LoadDraftForEditAsync"/>, so requesting step 2 is a no-op here; the checks only start
+    /// <see cref="LoadPlanForEditAsync"/>, so requesting step 2 is a no-op here; the checks only start
     /// biting from step 3 onward, re-checking the exact same "team with a member" / "team with a task"
     /// rules the Teams/Tasks POST "next" intents already enforce server-side (so a crafted/replayed GET
     /// can't reach a step those intents would have blocked).
@@ -164,13 +214,9 @@ public sealed class PlanWizardController : Controller
     [HttpGet("{id:guid}/teams")]
     public async Task<IActionResult> Teams(Guid id, CancellationToken ct)
     {
-        var (plan, shortCircuit) = await LoadDraftForEditAsync(id, ct);
-        if (shortCircuit is not null)
-        {
-            return shortCircuit;
-        }
+        var plan = await LoadPlanForEditAsync(id, ct);
 
-        var stepGuard = await RequireStep(plan!.Id, 2, ct);
+        var stepGuard = await RequireStep(plan.Id, 2, ct);
         if (stepGuard is not null)
         {
             return stepGuard;
@@ -192,15 +238,11 @@ public sealed class PlanWizardController : Controller
     /// </summary>
     [HttpPost("{id:guid}/teams")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Teams(Guid id, string intent, TeamInput input, CancellationToken ct)
+    public async Task<IActionResult> Teams(Guid id, string intent, TeamInput input, Guid teamId, Guid userId, CancellationToken ct)
     {
-        var (plan, shortCircuit) = await LoadDraftForEditAsync(id, ct);
-        if (shortCircuit is not null)
-        {
-            return shortCircuit;
-        }
+        var plan = await LoadPlanForEditAsync(id, ct);
 
-        var planId = plan!.Id;
+        var planId = plan.Id;
         ViewData["step"] = 2;
 
         if (intent == "add")
@@ -219,9 +261,62 @@ public sealed class PlanWizardController : Controller
             };
             await _uow.Repo<Team>().AddAsync(team, ct);
 
-            foreach (var userId in (input.MemberUserIds ?? new List<Guid>()).Distinct())
+            foreach (var memberUserId in (input.MemberUserIds ?? new List<Guid>()).Distinct())
             {
-                await _uow.Repo<TeamMembership>().AddAsync(new TeamMembership { TeamId = team.Id, UserId = userId }, ct);
+                await _uow.Repo<TeamMembership>().AddAsync(new TeamMembership { TeamId = team.Id, UserId = memberUserId }, ct);
+            }
+
+            await _uow.SaveChangesAsync(ct);
+            return View(await BuildTeamsVmAsync(planId, ct));
+        }
+
+        if (intent == "remove-team")
+        {
+            // Re-check the team belongs to THIS plan (a crafted teamId can't delete a foreign plan's team),
+            // then cascade-delete its memberships, task templates, and roster rows before the team itself.
+            var team = await _uow.Repo<Team>().FirstOrDefaultTrackedAsync(t => t.Id == teamId && t.PlanId == planId, ct);
+            if (team is null)
+            {
+                return NotFound();
+            }
+
+            foreach (var m in await _uow.Repo<TeamMembership>().ListTrackedAsync(m => m.TeamId == teamId, ct))
+            {
+                _uow.Repo<TeamMembership>().Remove(m);
+            }
+            foreach (var tt in await _uow.Repo<TaskTemplate>().ListTrackedAsync(t => t.TeamId == teamId, ct))
+            {
+                _uow.Repo<TaskTemplate>().Remove(tt);
+            }
+            foreach (var sa in await _uow.Repo<ShiftAssignment>().ListTrackedAsync(s => s.TeamId == teamId, ct))
+            {
+                _uow.Repo<ShiftAssignment>().Remove(sa);
+            }
+            _uow.Repo<Team>().Remove(team);
+
+            await _uow.SaveChangesAsync(ct);
+            return View(await BuildTeamsVmAsync(planId, ct));
+        }
+
+        if (intent == "remove-member")
+        {
+            // Re-check the team belongs to this plan, then drop the membership plus any roster row that
+            // involves the user (as the on-duty person OR as someone else's substitute) so no orphan
+            // ShiftAssignment survives to reference a user who is no longer on the team.
+            var team = await _uow.Repo<Team>().FirstOrDefaultAsync(t => t.Id == teamId && t.PlanId == planId, ct);
+            if (team is null)
+            {
+                return NotFound();
+            }
+
+            foreach (var m in await _uow.Repo<TeamMembership>().ListTrackedAsync(m => m.TeamId == teamId && m.UserId == userId, ct))
+            {
+                _uow.Repo<TeamMembership>().Remove(m);
+            }
+            foreach (var sa in await _uow.Repo<ShiftAssignment>().ListTrackedAsync(
+                         s => s.TeamId == teamId && (s.UserId == userId || s.SubstituteForUserId == userId), ct))
+            {
+                _uow.Repo<ShiftAssignment>().Remove(sa);
             }
 
             await _uow.SaveChangesAsync(ct);
@@ -262,6 +357,7 @@ public sealed class PlanWizardController : Controller
                 .OrderBy(t => t.Name)
                 .Select(t => new TeamInput
                 {
+                    Id = t.Id,
                     Name = t.Name,
                     TeamLeaderUserId = t.TeamLeaderUserId,
                     MemberUserIds = memberships.Where(m => m.TeamId == t.Id).Select(m => m.UserId).ToList(),
@@ -273,13 +369,9 @@ public sealed class PlanWizardController : Controller
     [HttpGet("{id:guid}/tasks")]
     public async Task<IActionResult> Tasks(Guid id, CancellationToken ct)
     {
-        var (plan, shortCircuit) = await LoadDraftForEditAsync(id, ct);
-        if (shortCircuit is not null)
-        {
-            return shortCircuit;
-        }
+        var plan = await LoadPlanForEditAsync(id, ct);
 
-        var stepGuard = await RequireStep(plan!.Id, 3, ct);
+        var stepGuard = await RequireStep(plan.Id, 3, ct);
         if (stepGuard is not null)
         {
             return stepGuard;
@@ -302,15 +394,11 @@ public sealed class PlanWizardController : Controller
     /// </summary>
     [HttpPost("{id:guid}/tasks")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Tasks(Guid id, string intent, Guid teamId, TaskInput input, CancellationToken ct)
+    public async Task<IActionResult> Tasks(Guid id, string intent, Guid teamId, Guid taskId, TaskInput input, CancellationToken ct)
     {
-        var (plan, shortCircuit) = await LoadDraftForEditAsync(id, ct);
-        if (shortCircuit is not null)
-        {
-            return shortCircuit;
-        }
+        var plan = await LoadPlanForEditAsync(id, ct);
 
-        var planId = plan!.Id;
+        var planId = plan.Id;
         ViewData["step"] = 3;
 
         if (intent == "add")
@@ -342,6 +430,27 @@ public sealed class PlanWizardController : Controller
             };
             await _uow.Repo<TaskTemplate>().AddAsync(template, ct);
 
+            await _uow.SaveChangesAsync(ct);
+            return View(await BuildTasksVmAsync(planId, ct));
+        }
+
+        if (intent == "remove-task")
+        {
+            // Load the task tracked, then verify (via its team) it belongs to THIS plan before deleting —
+            // a crafted taskId can't delete a task on someone else's plan.
+            var template = await _uow.Repo<TaskTemplate>().FirstOrDefaultTrackedAsync(t => t.Id == taskId, ct);
+            if (template is null)
+            {
+                return NotFound();
+            }
+
+            var owningTeam = await _uow.Repo<Team>().FirstOrDefaultAsync(t => t.Id == template.TeamId && t.PlanId == planId, ct);
+            if (owningTeam is null)
+            {
+                return NotFound();
+            }
+
+            _uow.Repo<TaskTemplate>().Remove(template);
             await _uow.SaveChangesAsync(ct);
             return View(await BuildTasksVmAsync(planId, ct));
         }
@@ -383,6 +492,7 @@ public sealed class PlanWizardController : Controller
                         .OrderBy(tt => tt.Order)
                         .Select(tt => new TaskInput
                         {
+                            Id = tt.Id,
                             Title = tt.Title,
                             Order = tt.Order,
                             DurationMinutes = (int)tt.Duration.TotalMinutes,
@@ -396,13 +506,9 @@ public sealed class PlanWizardController : Controller
     [HttpGet("{id:guid}/review")]
     public async Task<IActionResult> Review(Guid id, CancellationToken ct)
     {
-        var (plan, shortCircuit) = await LoadDraftForEditAsync(id, ct);
-        if (shortCircuit is not null)
-        {
-            return shortCircuit;
-        }
+        var plan = await LoadPlanForEditAsync(id, ct);
 
-        var stepGuard = await RequireStep(plan!.Id, 4, ct);
+        var stepGuard = await RequireStep(plan.Id, 4, ct);
         if (stepGuard is not null)
         {
             return stepGuard;
@@ -427,13 +533,9 @@ public sealed class PlanWizardController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Review(Guid id, List<RosterInput> roster, CancellationToken ct)
     {
-        var (plan, shortCircuit) = await LoadDraftForEditAsync(id, ct);
-        if (shortCircuit is not null)
-        {
-            return shortCircuit;
-        }
+        var plan = await LoadPlanForEditAsync(id, ct);
 
-        var planId = plan!.Id;
+        var planId = plan.Id;
         var stepGuard = await RequireStep(planId, 4, ct);
         if (stepGuard is not null)
         {
@@ -465,6 +567,15 @@ public sealed class PlanWizardController : Controller
             vm.Roster = roster;
             ViewData["reviewBlocked"] = _localizer["Review.RosterInvalid"].Value;
             return View(vm);
+        }
+
+        // REPLACE (not append): drop this plan's existing roster rows first, so re-finishing an already-
+        // rostered plan (the EDIT flow) overwrites its roster instead of duplicating it. The delete + the
+        // re-add + the status flip all commit in the one SaveChangesAsync below, so a reader can never
+        // observe the plan with a half-replaced roster.
+        foreach (var existing in await _uow.Repo<ShiftAssignment>().ListTrackedAsync(s => teamIds.Contains(s.TeamId), ct))
+        {
+            _uow.Repo<ShiftAssignment>().Remove(existing);
         }
 
         foreach (var row in roster)
@@ -518,18 +629,27 @@ public sealed class PlanWizardController : Controller
                     .ToList()))
             .ToList();
 
-        // Seed each default roster row from the SAME shift the activation cycle will resolve on-duty rows
-        // against (KuwaitShiftCalculator.Resolve(IClock.UtcNow) — Band + RosterDate, incl. the Kuwait
-        // night-after-midnight → previous-day rule). Using the raw wall clock here instead would make a
-        // manager who accepts the defaults during Evening/Night create a roster that fails to activate.
+        // Resolve the shift the activation cycle will match on-duty rows against
+        // (KuwaitShiftCalculator.Resolve(IClock.UtcNow) — Band + RosterDate, incl. the Kuwait
+        // night-after-midnight → previous-day rule). One roster row per membership: seeded from the plan's
+        // OWN existing primary ShiftAssignment when it already has one (the EDIT flow shows the real current
+        // roster), otherwise defaulted to the current Kuwait shift (the create flow, or newly-added members).
+        // Defaulting to the raw wall clock instead would make a manager who accepts the defaults during
+        // Evening/Night produce a roster that fails to activate.
         var resolved = _shiftCalc.Resolve(_clock.UtcNow);
+        var existingRoster = await _uow.Repo<ShiftAssignment>()
+            .ListAsync(s => teamIds.Contains(s.TeamId) && s.SubstituteForUserId == null, ct);
         var roster = memberships
-            .Select(m => new RosterInput
+            .Select(m =>
             {
-                TeamId = m.TeamId,
-                UserId = m.UserId,
-                Shift = resolved.Band,
-                Date = resolved.RosterDate,
+                var current = existingRoster.FirstOrDefault(s => s.TeamId == m.TeamId && s.UserId == m.UserId);
+                return new RosterInput
+                {
+                    TeamId = m.TeamId,
+                    UserId = m.UserId,
+                    Shift = current?.Shift ?? resolved.Band,
+                    Date = current?.Date ?? resolved.RosterDate,
+                };
             })
             .ToList();
 
@@ -537,6 +657,8 @@ public sealed class PlanWizardController : Controller
         {
             PlanId = planId,
             Roster = roster,
+            CurrentShift = resolved.Band,
+            CurrentDate = resolved.RosterDate,
             Readback = new ReviewReadback
             {
                 PlanName = plan!.Name,

@@ -21,6 +21,9 @@ public sealed class TeamTasks
 
 public sealed class TaskInput
 {
+    // Populated on the read-back so the per-task "remove" form can identify the row; left default
+    // (Guid.Empty) on the "add a task" form post.
+    public Guid Id { get; set; }
     public string Title { get; set; } = "";
     public int Order { get; set; }
     public int DurationMinutes { get; set; }
