@@ -51,7 +51,7 @@ public sealed class AppExceptionMiddleware
                     AppException.Kind.Validation => StatusCodes.Status400BadRequest,
                     _ => StatusCodes.Status500InternalServerError,
                 };
-                await WriteAsync(context, status, ex.Message, ex.ErrorKind.ToString());
+                await WriteAsync(context, status, ex.Message, ex.ErrorKind.ToString(), ex.Code);
                 return;
             }
 
@@ -121,7 +121,7 @@ public sealed class AppExceptionMiddleware
         }
     }
 
-    private static async Task WriteAsync(HttpContext context, int status, string error, string kind)
+    private static async Task WriteAsync(HttpContext context, int status, string error, string kind, string? code = null)
     {
         if (context.Response.HasStarted)
         {
@@ -131,6 +131,8 @@ public sealed class AppExceptionMiddleware
         context.Response.Clear();
         context.Response.StatusCode = status;
         context.Response.ContentType = "application/json; charset=utf-8";
-        await context.Response.WriteAsync(JsonSerializer.Serialize(new { error, kind }));
+        // code is the stable machine code (AppErrorCodes) clients branch/localize on; null when the
+        // thrown AppException carried none (or on the catch-all 500).
+        await context.Response.WriteAsync(JsonSerializer.Serialize(new { error, kind, code }));
     }
 }

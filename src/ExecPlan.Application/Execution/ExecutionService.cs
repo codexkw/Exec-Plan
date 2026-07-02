@@ -100,7 +100,7 @@ public sealed class ExecutionService
                 var isLeaderOfTarget = _cur.UserId is not null && targetTeam?.TeamLeaderUserId == _cur.UserId;
                 if (!isLeaderOfTarget)
                 {
-                    throw AppException.Forbidden("You cannot reassign a task across a team boundary.");
+                    throw AppException.Forbidden("You cannot reassign a task across a team boundary.", AppErrorCodes.CrossTeamReassign);
                 }
             }
             else
@@ -155,7 +155,7 @@ public sealed class ExecutionService
         var isLeaderOfTeam = _cur.UserId is not null && team?.TeamLeaderUserId == _cur.UserId;
         if (!(isMgrAdmin || isLeaderOfTeam))
         {
-            throw AppException.Forbidden("You are not allowed to set a substitute for this participant.");
+            throw AppException.Forbidden("You are not allowed to set a substitute for this participant.", AppErrorCodes.SetSubstituteForbidden);
         }
 
         participant.ResolvedSubstituteUserId = substituteUserId;
@@ -173,7 +173,7 @@ public sealed class ExecutionService
     {
         if (_cur.Role != UserRole.TeamLeader)
         {
-            throw AppException.Forbidden("Only a team leader may raise an issue.");
+            throw AppException.Forbidden("Only a team leader may raise an issue.", AppErrorCodes.RaiseIssueLeaderOnly);
         }
 
         var activation = await _uow.Repo<PlanActivation>().GetByIdAsync(activationId, ct);
@@ -205,7 +205,7 @@ public sealed class ExecutionService
         var isMgrAdmin = _cur.Role is UserRole.PlanManager or UserRole.SystemAdmin;
         if (!isMgrAdmin)
         {
-            throw AppException.Forbidden("Only a manager or admin may close an activation.");
+            throw AppException.Forbidden("Only a manager or admin may close an activation.", AppErrorCodes.CloseManagerOnly);
         }
 
         var activation = await _uow.Repo<PlanActivation>().GetByIdAsync(activationId, ct);
@@ -216,7 +216,7 @@ public sealed class ExecutionService
 
         if (activation.Status == ActivationStatus.Closed)
         {
-            throw AppException.Conflict("This activation is already closed.", "AlreadyClosed");
+            throw AppException.Conflict("This activation is already closed.", AppErrorCodes.AlreadyClosed);
         }
 
         activation.Status = ActivationStatus.Closed;

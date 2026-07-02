@@ -57,7 +57,7 @@ public sealed class ActivationService : IActivationService
             .FirstOrDefaultAsync(a => a.PlanId == planId && a.UserId == actingUserId, ct) is not null;
         if (!(isAdmin || isCreator || isActivator))
         {
-            throw AppException.Forbidden("You are not allowed to activate this plan.");
+            throw AppException.Forbidden("You are not allowed to activate this plan.", AppErrorCodes.NotAuthorizedToActivate);
         }
 
         // 3. Already-active guard: only one Active activation per plan at a time.
@@ -65,7 +65,7 @@ public sealed class ActivationService : IActivationService
             .FirstOrDefaultAsync(a => a.PlanId == planId && a.Status == ActivationStatus.Active, ct);
         if (existingActive is not null)
         {
-            throw AppException.Conflict("This plan is already active.", "PlanAlreadyActive");
+            throw AppException.Conflict("This plan is already active.", AppErrorCodes.PlanAlreadyActive);
         }
 
         // 4. Resolve the Kuwait shift band + roster date for "now".
@@ -85,7 +85,7 @@ public sealed class ActivationService : IActivationService
             ct);
         if (onDuty.Count == 0)
         {
-            throw AppException.Conflict("No one is on duty for this shift.", "NoOneOnDuty");
+            throw AppException.Conflict("No one is on duty for this shift.", AppErrorCodes.NoOneOnDuty);
         }
 
         var substituteRows = await _uow.Repo<ShiftAssignment>().ListAsync(

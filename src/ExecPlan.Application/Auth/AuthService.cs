@@ -58,13 +58,13 @@ public sealed class AuthService : IAuthService
         var record = await _refreshTokenStore.FindActiveAsync(incomingHash, utcNow, ct);
         if (record is null)
         {
-            throw AppException.Unauthorized("Refresh token is invalid, revoked, or expired.");
+            throw AppException.Unauthorized("Refresh token is invalid, revoked, or expired.", AppErrorCodes.RefreshInvalid);
         }
 
         var user = await _uow.Repo<User>().GetByIdAsync(record.UserId, ct);
         if (user is null || !user.IsActive)
         {
-            throw AppException.Unauthorized("User is no longer active.");
+            throw AppException.Unauthorized("User is no longer active.", AppErrorCodes.RefreshInvalid);
         }
 
         var newRefreshValue = GenerateRefreshTokenValue();
@@ -98,7 +98,7 @@ public sealed class AuthService : IAuthService
     {
         if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(password))
         {
-            throw AppException.Unauthorized("Invalid username or password.");
+            throw AppException.Unauthorized("Invalid username or password.", AppErrorCodes.InvalidCredentials);
         }
 
         var user = await FindActiveUserByUserNameAsync(userName, ct);
@@ -107,12 +107,12 @@ public sealed class AuthService : IAuthService
             // No such active user — still run a real password verification (against a fixed dummy
             // hash) so this path costs about the same as the "wrong password" path below.
             _hasher.Verify(_dummyPasswordHash.Value, password);
-            throw AppException.Unauthorized("Invalid username or password.");
+            throw AppException.Unauthorized("Invalid username or password.", AppErrorCodes.InvalidCredentials);
         }
 
         if (!_hasher.Verify(user.PasswordHash, password))
         {
-            throw AppException.Unauthorized("Invalid username or password.");
+            throw AppException.Unauthorized("Invalid username or password.", AppErrorCodes.InvalidCredentials);
         }
 
         return user;

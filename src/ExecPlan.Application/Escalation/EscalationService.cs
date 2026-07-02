@@ -47,7 +47,7 @@ public sealed class EscalationService : IEscalationService
 
         if (activation.Status != ActivationStatus.Active)
         {
-            throw AppException.Conflict("Cannot escalate a closed activation.", "EscalateClosed");
+            throw AppException.Conflict("Cannot escalate a closed activation.", AppErrorCodes.EscalateClosed);
         }
 
         // 2. Pending participants TRACKED — escalation MUTATES them, so a no-tracking read would drop

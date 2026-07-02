@@ -60,5 +60,7 @@ desktop.ini
 # Production secrets (server-only; never committed)
 appsettings.Production.json
 
-# VS publish profiles: the .user sibling stores the saved deploy password (never commit)
+# VS publish profiles: the .pubxml holds the server host/username and the .user sibling the saved
+# deploy password — NEVER commit any of it. Ignore the whole directory, not just the .user file.
+**/PublishProfiles/
 **/PublishProfiles/*.pubxml.user

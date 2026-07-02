@@ -31,7 +31,7 @@ public sealed class AuthController : ControllerBase
         }
         catch (AppException ex) when (ex.ErrorKind == AppException.Kind.Unauthorized)
         {
-            return Unauthorized(new { message = ex.Message });
+            return Unauthorized(new { message = ex.Message, code = ex.Code });
         }
     }
 
@@ -45,7 +45,7 @@ public sealed class AuthController : ControllerBase
         }
         catch (AppException ex) when (ex.ErrorKind == AppException.Kind.Unauthorized)
         {
-            return Unauthorized(new { message = ex.Message });
+            return Unauthorized(new { message = ex.Message, code = ex.Code });
         }
     }
 }

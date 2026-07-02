@@ -38,13 +38,13 @@ public sealed class BroadcastService
     {
         if (string.IsNullOrWhiteSpace(body))
         {
-            throw AppException.Validation("Broadcast body is required.", "BroadcastEmpty");
+            throw AppException.Validation("Broadcast body is required.", AppErrorCodes.BroadcastEmpty);
         }
 
         var isMgrAdmin = _cur.Role is UserRole.PlanManager or UserRole.SystemAdmin;
         if (!isMgrAdmin)
         {
-            throw AppException.Forbidden("Only a manager or admin may broadcast.");
+            throw AppException.Forbidden("Only a manager or admin may broadcast.", AppErrorCodes.BroadcastManagerOnly);
         }
 
         if (_cur.UserId is null)
