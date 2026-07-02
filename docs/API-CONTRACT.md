@@ -156,7 +156,7 @@ is a diagnostic.
   - `FeedEvent`: `atUtc, type, text` — `text` is opaque English literal, newest-first, capped 50
 - **`ExecutionTaskDto`**: `id, activationId, participantId, title, order, status, note, dueAtUtc, completedAtUtc`
 - **`NotificationDto`**: `id, kind, body, createdAtUtc`
-- **`MyActivationListItemDto`**: `activationId, planId, planName, status, shift, rosterDate, myRole ("Participant"|"Leader"|"Manager"), startedAtUtc, closedAtUtc?, myParticipantId?` — `planName` is a live read (no snapshot); `myParticipantId` is null for a pure manager.
+- **`MyActivationListItemDto`**: `activationId, planId, planName, status, shift, rosterDate, myRole ("Participant"|"Leader"|"Manager"), startedAtUtc, closedAtUtc?, myParticipantId?` — `planName` is a live read (no snapshot); `myParticipantId` is null for a pure manager. ⚠ **`rosterDate` is a zone-less calendar date** (`.Date`, `DateTimeKind.Unspecified`) → serialized **without** a `Z`/offset (`"2026-06-30T00:00:00"`), unlike the `*Utc` instants which carry `Z`. Clients must parse it **date-only** (take Y/M/D, don't apply a UTC conversion) or a non-UTC device shifts the day.
 - **`ParticipantRosterRowDto`**: `participantId, userId, fullName, teamId, teamName, status, isSubstitute, inductedFromParticipantId?, tasksTotal, tasksDone` — `teamName` is the frozen snapshot; `fullName` is a live read.
 - **`SubstituteCandidateDto`**: `userId, fullName`
 
@@ -198,6 +198,7 @@ All confirmed against source (2026-07-02). Four of six are now **FILLED** (backe
 - **G5 — no participant roster.** ✅ **FILLED** — `GET /api/v1/activations/{id}/participants` (§4.1).
 - **G5b — no eligible-substitute list.** ✅ **FILLED** —
   `GET /api/v1/activations/{id}/teams/{teamId}/eligible-substitutes` (§4.1).
+- **G6 — `acknowledge` isn't guarded against a Closed activation.** ⏳ **Open (backend).** `AcknowledgeService` writes a `ResponseStatus` with **no check on the activation `Status`**, so a member can «أنا جاهز» an already-Closed activation. Surfaced by the Slice 2 mobile review: the mobile Ready button also gates on a possibly-stale `MyActivation` snapshot. Fix backend-side (reject/no-op when Closed) and have the client re-derive `isActive` on refresh.
 
 ---
 *Generated 2026-07-02 from backend `main`. Update this file when the API changes.*
