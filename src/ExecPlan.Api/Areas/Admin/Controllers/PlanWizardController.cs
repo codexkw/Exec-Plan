@@ -91,7 +91,7 @@ public sealed class PlanWizardController : Controller
     {
         if (string.IsNullOrWhiteSpace(vm.Name))
         {
-            ModelState.AddModelError(nameof(vm.Name), "required");
+            ModelState.AddModelError(nameof(vm.Name), _localizer["Validation.NameRequired"].Value);
         }
 
         if (!ModelState.IsValid)
@@ -207,7 +207,7 @@ public sealed class PlanWizardController : Controller
         {
             if (string.IsNullOrWhiteSpace(input.Name))
             {
-                ModelState.AddModelError(nameof(input.Name), "required");
+                ModelState.AddModelError(nameof(input.Name), _localizer["Validation.NameRequired"].Value);
                 return View(await BuildTeamsVmAsync(planId, ct));
             }
 
@@ -323,13 +323,13 @@ public sealed class PlanWizardController : Controller
 
             if (string.IsNullOrWhiteSpace(input.Title))
             {
-                ModelState.AddModelError(nameof(input.Title), "required");
+                ModelState.AddModelError(nameof(input.Title), _localizer["Validation.TitleRequired"].Value);
                 return View(await BuildTasksVmAsync(planId, ct));
             }
 
             if (input.DurationMinutes <= 0)
             {
-                ModelState.AddModelError(nameof(input.DurationMinutes), "required");
+                ModelState.AddModelError(nameof(input.DurationMinutes), _localizer["Validation.DurationRequired"].Value);
                 return View(await BuildTasksVmAsync(planId, ct));
             }
 

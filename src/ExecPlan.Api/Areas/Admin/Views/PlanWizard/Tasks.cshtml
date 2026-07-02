@@ -1,6 +1,7 @@
 @model ExecPlan.Api.Areas.Admin.Models.WizardTasksVm
 <h1 class="h4 mb-3">@Localizer["Plans.New"]</h1>
 <partial name="_Steps" />
+<partial name="_ValidationSummary" />
 
 <h2 class="h5">@Localizer["Plans.Tasks"]</h2>
 @if (!Model.Teams.Any())

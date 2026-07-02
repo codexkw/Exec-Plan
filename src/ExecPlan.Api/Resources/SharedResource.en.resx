@@ -514,4 +514,16 @@
   <data name="Dashboard.StatusClosed" xml:space="preserve">
     <value>Closed</value>
   </data>
+  <data name="Validation.RequiredFields" xml:space="preserve">
+    <value>Please complete all required fields.</value>
+  </data>
+  <data name="Validation.NameRequired" xml:space="preserve">
+    <value>Name is required.</value>
+  </data>
+  <data name="Validation.TitleRequired" xml:space="preserve">
+    <value>Title is required.</value>
+  </data>
+  <data name="Validation.DurationRequired" xml:space="preserve">
+    <value>Duration must be greater than zero minutes.</value>
+  </data>
 </root>

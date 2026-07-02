@@ -5,6 +5,7 @@
 <div class="ep-card p-4">
   <form method="post" action="/admin/plans/create">
     @Html.AntiForgeryToken()
+    <partial name="_ValidationSummary" />
     <div class="mb-3">
       <label class="form-label">@Localizer["Plans.Name"]</label>
       <input class="form-control" name="Name" value="@Model.Name" required/>

@@ -1,0 +1,24 @@
+@* Shared validation-summary partial for the admin forms. Renders every current ModelState error as a
+   Material-styled alert, or nothing at all when the model is valid. The controllers store already-
+   localized messages as the ModelState error text (e.g. _localizer["Validation.NameRequired"].Value), so
+   this partial stays presentation-only and culture-agnostic. It reads the parent view's ModelState (the
+   <partial> tag helper shares it), so no model needs to be passed. *@
+@{
+    var validationErrors = ViewData.ModelState.Values
+        .SelectMany(state => state.Errors)
+        .Select(error => error.ErrorMessage)
+        .Where(message => !string.IsNullOrWhiteSpace(message))
+        .Distinct()
+        .ToList();
+}
+@if (validationErrors.Count > 0)
+{
+    <div class="alert alert-danger" role="alert" data-validation-summary="true">
+        <ul class="mb-0 ps-3">
+            @foreach (var message in validationErrors)
+            {
+                <li>@message</li>
+            }
+        </ul>
+    </div>
+}

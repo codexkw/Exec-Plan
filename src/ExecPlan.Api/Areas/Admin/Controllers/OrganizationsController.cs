@@ -5,6 +5,7 @@ using ExecPlan.Domain.Entities;
 using ExecPlan.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 
 namespace ExecPlan.Api.Areas.Admin.Controllers;
 
@@ -22,10 +23,12 @@ namespace ExecPlan.Api.Areas.Admin.Controllers;
 public sealed class OrganizationsController : Controller
 {
     private readonly IUnitOfWork _uow;
+    private readonly IStringLocalizer<Resources.SharedResource> _localizer;
 
-    public OrganizationsController(IUnitOfWork uow)
+    public OrganizationsController(IUnitOfWork uow, IStringLocalizer<Resources.SharedResource> localizer)
     {
         _uow = uow;
+        _localizer = localizer;
     }
 
     [HttpGet("")]
@@ -52,7 +55,7 @@ public sealed class OrganizationsController : Controller
     {
         if (string.IsNullOrWhiteSpace(vm.Name))
         {
-            ModelState.AddModelError("", "Organizations required fields");
+            ModelState.AddModelError("", _localizer["Validation.NameRequired"].Value);
         }
 
         if (!ModelState.IsValid)

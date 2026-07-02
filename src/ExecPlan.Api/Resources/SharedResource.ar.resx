@@ -514,4 +514,16 @@
   <data name="Dashboard.StatusClosed" xml:space="preserve">
     <value>مغلق</value>
   </data>
+  <data name="Validation.RequiredFields" xml:space="preserve">
+    <value>الرجاء تعبئة جميع الحقول المطلوبة.</value>
+  </data>
+  <data name="Validation.NameRequired" xml:space="preserve">
+    <value>الاسم مطلوب.</value>
+  </data>
+  <data name="Validation.TitleRequired" xml:space="preserve">
+    <value>العنوان مطلوب.</value>
+  </data>
+  <data name="Validation.DurationRequired" xml:space="preserve">
+    <value>يجب أن تكون المدة أكبر من صفر دقيقة.</value>
+  </data>
 </root>

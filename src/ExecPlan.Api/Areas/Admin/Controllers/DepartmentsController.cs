@@ -6,6 +6,7 @@ using ExecPlan.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Localization;
 
 namespace ExecPlan.Api.Areas.Admin.Controllers;
 
@@ -23,10 +24,12 @@ namespace ExecPlan.Api.Areas.Admin.Controllers;
 public sealed class DepartmentsController : Controller
 {
     private readonly IUnitOfWork _uow;
+    private readonly IStringLocalizer<Resources.SharedResource> _localizer;
 
-    public DepartmentsController(IUnitOfWork uow)
+    public DepartmentsController(IUnitOfWork uow, IStringLocalizer<Resources.SharedResource> localizer)
     {
         _uow = uow;
+        _localizer = localizer;
     }
 
     [HttpGet("")]
@@ -56,7 +59,7 @@ public sealed class DepartmentsController : Controller
     {
         if (string.IsNullOrWhiteSpace(vm.Name))
         {
-            ModelState.AddModelError("", "Departments required fields");
+            ModelState.AddModelError("", _localizer["Validation.NameRequired"].Value);
         }
 
         if (!ModelState.IsValid)

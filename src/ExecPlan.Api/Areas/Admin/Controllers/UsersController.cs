@@ -7,6 +7,7 @@ using ExecPlan.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Localization;
 
 namespace ExecPlan.Api.Areas.Admin.Controllers;
 
@@ -26,11 +27,13 @@ public sealed class UsersController : Controller
 {
     private readonly IUnitOfWork _uow;
     private readonly IPasswordHasher _hasher;
+    private readonly IStringLocalizer<Resources.SharedResource> _localizer;
 
-    public UsersController(IUnitOfWork uow, IPasswordHasher hasher)
+    public UsersController(IUnitOfWork uow, IPasswordHasher hasher, IStringLocalizer<Resources.SharedResource> localizer)
     {
         _uow = uow;
         _hasher = hasher;
+        _localizer = localizer;
     }
 
     [HttpGet("")]
@@ -61,7 +64,7 @@ public sealed class UsersController : Controller
     {
         if (string.IsNullOrWhiteSpace(vm.UserName) || string.IsNullOrWhiteSpace(vm.Password))
         {
-            ModelState.AddModelError("", "Users required fields");
+            ModelState.AddModelError("", _localizer["Validation.RequiredFields"].Value);
         }
 
         if (!ModelState.IsValid)
@@ -112,7 +115,7 @@ public sealed class UsersController : Controller
 
         if (string.IsNullOrWhiteSpace(vm.UserName))
         {
-            ModelState.AddModelError("", "Users required fields");
+            ModelState.AddModelError("", _localizer["Validation.RequiredFields"].Value);
         }
 
         if (!ModelState.IsValid)
