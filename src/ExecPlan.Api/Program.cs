@@ -13,6 +13,7 @@ using ExecPlan.Domain.Enums;
 using ExecPlan.Infrastructure;
 using ExecPlan.Infrastructure.Seed;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
@@ -143,6 +144,22 @@ if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Seed:En
 {
     await DataSeeder.SeedAsync(app.Services);
 }
+
+// The app runs behind Cloudflare (TLS terminates at the edge; the origin sees plain HTTP). Restore the
+// real client scheme/IP from the X-Forwarded-* headers BEFORE anything reads Request.Scheme — otherwise
+// the app thinks it's on HTTP and emits http:// redirect Locations, drops the Secure flag on the
+// antiforgery cookie, and would generate http:// absolute URLs (reset/activation links, etc.).
+// Must be the first middleware so every downstream stage sees the corrected values.
+// SECURITY: KnownNetworks/KnownProxies are cleared, so these headers are trusted from ANY upstream. That
+// is only safe because the origin accepts traffic solely from Cloudflare — keep the server firewalled to
+// Cloudflare's IP ranges (or add them to KnownProxies) so a direct-to-origin request can't spoof them.
+var forwardedHeaderOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+};
+forwardedHeaderOptions.KnownNetworks.Clear();
+forwardedHeaderOptions.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedHeaderOptions);
 
 // Consistent AppException → HTTP mapping for the whole pipeline. Registered before auth so it also
 // wraps the authentication/authorization middleware and any controller-level throws.
