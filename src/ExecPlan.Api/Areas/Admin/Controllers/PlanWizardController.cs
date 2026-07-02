@@ -48,14 +48,20 @@ public sealed class PlanWizardController : Controller
     /// <summary>
     /// Reusable ownership guard shared by every editable wizard step (info/teams/tasks/review), for BOTH
     /// the create flow (a fresh Draft) and the post-Ready EDIT flow. Loads the plan by id TRACKED (so a
-    /// step can mutate it and rely on a later <c>SaveChangesAsync</c>), and enforces that only the plan's
-    /// own creator (or a SystemAdmin) may edit it. Missing plan → <see cref="AppException"/> NotFound;
-    /// wrong owner → Forbidden (both mapped by <c>AppExceptionMiddleware</c> to the shared NotFound/denied
-    /// pages). Unlike the original Draft-only guard this replaced, a <see cref="PlanStatus.Ready"/> plan is
-    /// NOT redirected away — editing a finalized plan is allowed, because its template is independent of any
-    /// running activation's frozen snapshot, so template edits only affect FUTURE activations.
+    /// step can mutate it and rely on a later <c>SaveChangesAsync</c>), enforces owner-or-admin, and blocks
+    /// editing while an activation is running. Missing plan → <see cref="AppException"/> NotFound; wrong
+    /// owner → Forbidden (both mapped by <c>AppExceptionMiddleware</c>). Unlike the original Draft-only
+    /// guard this replaced, a <see cref="PlanStatus.Ready"/> plan IS editable — but only while it has NO
+    /// <see cref="ActivationStatus.Active"/> activation. The activation snapshot
+    /// (<c>ActivationParticipant</c>/<c>ExecutionTask</c> created at activation time) is frozen, but several
+    /// LIVE reads are NOT isolated from template edits: the dashboard's TeamLeader authorization re-reads
+    /// <see cref="Team.TeamLeaderUserId"/> on every access, and <c>EscalationService</c> regenerates a
+    /// newly-inducted substitute's tasks from <c>TaskTemplate</c> live — so mutating teams/tasks/roster
+    /// mid-activation could break the running activation. That case returns a <c>ShortCircuit</c> redirect
+    /// back to Detail (with a note) rather than an exception; the create flow never trips it (a Draft has no
+    /// activation). Callers must check <c>ShortCircuit</c> first and return it as-is.
     /// </summary>
-    private async Task<Plan> LoadPlanForEditAsync(Guid id, CancellationToken ct)
+    private async Task<(Plan Plan, IActionResult? ShortCircuit)> LoadPlanForEditAsync(Guid id, CancellationToken ct)
     {
         var plan = await _uow.Repo<Plan>().FirstOrDefaultTrackedAsync(p => p.Id == id, ct);
         if (plan is null)
@@ -69,11 +75,19 @@ public sealed class PlanWizardController : Controller
             throw AppException.Forbidden($"You do not own plan {id}.");
         }
 
+        var active = await _uow.Repo<PlanActivation>()
+            .FirstOrDefaultAsync(a => a.PlanId == id && a.Status == ActivationStatus.Active, ct);
+        if (active is not null)
+        {
+            TempData["activateError"] = _localizer["Plans.EditBlockedActive"].Value;
+            return (plan, Redirect($"/admin/plans/{id}"));
+        }
+
         // Every action that loads an EXISTING plan for editing can navigate between all four steps, so
         // expose the id to _Steps.cshtml (which renders the step chips as links only when it is present)
         // and to Info.cshtml (which posts to the {id}/info edit route rather than the create route).
         ViewData["planId"] = plan.Id;
-        return plan;
+        return (plan, null);
     }
 
     [HttpGet("")]
@@ -126,7 +140,11 @@ public sealed class PlanWizardController : Controller
     [HttpGet("{id:guid}/info")]
     public async Task<IActionResult> EditInfo(Guid id, CancellationToken ct)
     {
-        var plan = await LoadPlanForEditAsync(id, ct);
+        var (plan, editBlocked) = await LoadPlanForEditAsync(id, ct);
+        if (editBlocked is not null)
+        {
+            return editBlocked;
+        }
         ViewData["step"] = 1;
         return View("Info", new WizardInfoVm
         {
@@ -147,7 +165,11 @@ public sealed class PlanWizardController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditInfo(Guid id, WizardInfoVm vm, CancellationToken ct)
     {
-        var plan = await LoadPlanForEditAsync(id, ct);
+        var (plan, editBlocked) = await LoadPlanForEditAsync(id, ct);
+        if (editBlocked is not null)
+        {
+            return editBlocked;
+        }
 
         if (string.IsNullOrWhiteSpace(vm.Name))
         {
@@ -214,7 +236,11 @@ public sealed class PlanWizardController : Controller
     [HttpGet("{id:guid}/teams")]
     public async Task<IActionResult> Teams(Guid id, CancellationToken ct)
     {
-        var plan = await LoadPlanForEditAsync(id, ct);
+        var (plan, editBlocked) = await LoadPlanForEditAsync(id, ct);
+        if (editBlocked is not null)
+        {
+            return editBlocked;
+        }
 
         var stepGuard = await RequireStep(plan.Id, 2, ct);
         if (stepGuard is not null)
@@ -240,7 +266,11 @@ public sealed class PlanWizardController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Teams(Guid id, string intent, TeamInput input, Guid teamId, Guid userId, CancellationToken ct)
     {
-        var plan = await LoadPlanForEditAsync(id, ct);
+        var (plan, editBlocked) = await LoadPlanForEditAsync(id, ct);
+        if (editBlocked is not null)
+        {
+            return editBlocked;
+        }
 
         var planId = plan.Id;
         ViewData["step"] = 2;
@@ -300,13 +330,22 @@ public sealed class PlanWizardController : Controller
 
         if (intent == "remove-member")
         {
-            // Re-check the team belongs to this plan, then drop the membership plus any roster row that
-            // involves the user (as the on-duty person OR as someone else's substitute) so no orphan
-            // ShiftAssignment survives to reference a user who is no longer on the team.
-            var team = await _uow.Repo<Team>().FirstOrDefaultAsync(t => t.Id == teamId && t.PlanId == planId, ct);
+            // Re-check the team belongs to this plan (load TRACKED so we can also clear the leader below),
+            // then drop the membership plus any roster row that involves the user (as the on-duty person OR
+            // as someone else's substitute) so no orphan ShiftAssignment survives to reference a user who is
+            // no longer on the team.
+            var team = await _uow.Repo<Team>().FirstOrDefaultTrackedAsync(t => t.Id == teamId && t.PlanId == planId, ct);
             if (team is null)
             {
                 return NotFound();
+            }
+
+            // If the removed user was this team's leader, clear the (LIVE-read) leader reference so they
+            // don't retain leader-level authority — dashboard viewing, task reassignment, the leader landing
+            // list — over a team they're no longer on.
+            if (team.TeamLeaderUserId == userId)
+            {
+                team.TeamLeaderUserId = null;
             }
 
             foreach (var m in await _uow.Repo<TeamMembership>().ListTrackedAsync(m => m.TeamId == teamId && m.UserId == userId, ct))
@@ -369,7 +408,11 @@ public sealed class PlanWizardController : Controller
     [HttpGet("{id:guid}/tasks")]
     public async Task<IActionResult> Tasks(Guid id, CancellationToken ct)
     {
-        var plan = await LoadPlanForEditAsync(id, ct);
+        var (plan, editBlocked) = await LoadPlanForEditAsync(id, ct);
+        if (editBlocked is not null)
+        {
+            return editBlocked;
+        }
 
         var stepGuard = await RequireStep(plan.Id, 3, ct);
         if (stepGuard is not null)
@@ -396,7 +439,11 @@ public sealed class PlanWizardController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Tasks(Guid id, string intent, Guid teamId, Guid taskId, TaskInput input, CancellationToken ct)
     {
-        var plan = await LoadPlanForEditAsync(id, ct);
+        var (plan, editBlocked) = await LoadPlanForEditAsync(id, ct);
+        if (editBlocked is not null)
+        {
+            return editBlocked;
+        }
 
         var planId = plan.Id;
         ViewData["step"] = 3;
@@ -506,7 +553,11 @@ public sealed class PlanWizardController : Controller
     [HttpGet("{id:guid}/review")]
     public async Task<IActionResult> Review(Guid id, CancellationToken ct)
     {
-        var plan = await LoadPlanForEditAsync(id, ct);
+        var (plan, editBlocked) = await LoadPlanForEditAsync(id, ct);
+        if (editBlocked is not null)
+        {
+            return editBlocked;
+        }
 
         var stepGuard = await RequireStep(plan.Id, 4, ct);
         if (stepGuard is not null)
@@ -533,7 +584,11 @@ public sealed class PlanWizardController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Review(Guid id, List<RosterInput> roster, CancellationToken ct)
     {
-        var plan = await LoadPlanForEditAsync(id, ct);
+        var (plan, editBlocked) = await LoadPlanForEditAsync(id, ct);
+        if (editBlocked is not null)
+        {
+            return editBlocked;
+        }
 
         var planId = plan.Id;
         var stepGuard = await RequireStep(planId, 4, ct);
@@ -632,13 +687,16 @@ public sealed class PlanWizardController : Controller
         // Resolve the shift the activation cycle will match on-duty rows against
         // (KuwaitShiftCalculator.Resolve(IClock.UtcNow) — Band + RosterDate, incl. the Kuwait
         // night-after-midnight → previous-day rule). One roster row per membership: seeded from the plan's
-        // OWN existing primary ShiftAssignment when it already has one (the EDIT flow shows the real current
-        // roster), otherwise defaulted to the current Kuwait shift (the create flow, or newly-added members).
+        // OWN existing ShiftAssignment when it already has one (the EDIT flow shows the real current roster,
+        // INCLUDING its substitute link — Finish is a full REPLACE, so anything not round-tripped here would
+        // be silently dropped), otherwise defaulted to the current Kuwait shift (create flow / new members).
+        // Match on ALL of the plan's rows (not just SubstituteForUserId==null) so a member whose stored row
+        // is itself a substitute row still reflects its real shift/date/substitute rather than the defaults.
         // Defaulting to the raw wall clock instead would make a manager who accepts the defaults during
         // Evening/Night produce a roster that fails to activate.
         var resolved = _shiftCalc.Resolve(_clock.UtcNow);
         var existingRoster = await _uow.Repo<ShiftAssignment>()
-            .ListAsync(s => teamIds.Contains(s.TeamId) && s.SubstituteForUserId == null, ct);
+            .ListAsync(s => teamIds.Contains(s.TeamId), ct);
         var roster = memberships
             .Select(m =>
             {
@@ -649,6 +707,7 @@ public sealed class PlanWizardController : Controller
                     UserId = m.UserId,
                     Shift = current?.Shift ?? resolved.Band,
                     Date = current?.Date ?? resolved.RosterDate,
+                    SubstituteForUserId = current?.SubstituteForUserId,
                 };
             })
             .ToList();

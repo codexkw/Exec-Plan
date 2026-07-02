@@ -529,6 +529,9 @@
   <data name="Plans.Edit" xml:space="preserve">
     <value>Edit plan</value>
   </data>
+  <data name="Plans.EditBlockedActive" xml:space="preserve">
+    <value>This plan can't be edited while an activation is running. Close the activation first.</value>
+  </data>
   <data name="Common.Remove" xml:space="preserve">
     <value>Remove</value>
   </data>

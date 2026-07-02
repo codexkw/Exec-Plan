@@ -127,9 +127,11 @@ public sealed class PlansController : Controller
             Scope = plan.Scope,
             Teams = teamBlocks,
             ActiveActivationId = activeActivation?.Id,
-            // Mirrors PlanWizardController.LoadPlanForEditAsync's owner-or-admin rule so the "Edit plan"
-            // entry point only shows to someone the edit routes will actually let through.
-            CanEdit = plan.CreatedByUserId == _currentUser.UserId || User.IsInRole(nameof(UserRole.SystemAdmin)),
+            // Mirrors PlanWizardController.LoadPlanForEditAsync's gate so the "Edit plan" entry point only
+            // shows to someone the edit routes will actually let through: owner-or-admin AND no Active
+            // activation (editing a plan's template while it is running could break the live activation).
+            CanEdit = (plan.CreatedByUserId == _currentUser.UserId || User.IsInRole(nameof(UserRole.SystemAdmin)))
+                      && activeActivation is null,
         };
         return View(vm);
     }

@@ -363,4 +363,111 @@ public class WizardEditTests : IClassFixture<TestAppFactory>
         res.StatusCode.Should().Be(HttpStatusCode.Redirect);
         res.Headers.Location!.ToString().Should().Contain("/admin/denied");
     }
+
+    [Fact]
+    public async Task Review_get_preserves_an_existing_substitute_assignment()
+    {
+        // member1 is on duty (primary row); member2 stands in FOR member1 (a substitute row). Re-opening the
+        // roster editor must round-trip that substitute link — Finish is a full REPLACE, so a row seeded with
+        // SubstituteForUserId dropped would silently delete the substitute (and disable escalation-induction).
+        Guid planId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var ctx = scope.ServiceProvider.GetRequiredService<ExecPlanDbContext>();
+            var plan = new Plan { Name = "WizardEdit Substitute Plan", Type = PlanType.Daily, Status = PlanStatus.Ready, CreatedByUserId = _managerId };
+            ctx.Plans.Add(plan);
+            ctx.SaveChanges();
+            var team = new Team { PlanId = plan.Id, Name = "Kilo" };
+            ctx.Teams.Add(team);
+            ctx.SaveChanges();
+            ctx.TeamMemberships.Add(new TeamMembership { TeamId = team.Id, UserId = _member1Id });
+            ctx.TeamMemberships.Add(new TeamMembership { TeamId = team.Id, UserId = _member2Id });
+            ctx.TaskTemplates.Add(new TaskTemplate { TeamId = team.Id, Title = "T", Order = 1, Duration = TimeSpan.FromMinutes(10) });
+            ctx.ShiftAssignments.Add(new ShiftAssignment { TeamId = team.Id, UserId = _member1Id, Shift = ShiftBand.Morning, Date = new DateTime(2026, 6, 30) });
+            ctx.ShiftAssignments.Add(new ShiftAssignment { TeamId = team.Id, UserId = _member2Id, Shift = ShiftBand.Morning, Date = new DateTime(2026, 6, 30), SubstituteForUserId = _member1Id });
+            ctx.SaveChanges();
+            planId = plan.Id;
+        }
+
+        var client = WebTestHelpers.NewClient(_factory);
+        await WebTestHelpers.LoginAsync(client, ManagerUserName, Password);
+
+        var body = await client.GetStringAsync($"/admin/plans/create/{planId}/review");
+        // The only place a member guid appears with selected="selected" is member2's "substitute for" select
+        // showing member1 — proving SubstituteForUserId round-tripped (Shift selects use enum-name values).
+        body.Should().Contain($"value=\"{_member1Id}\" selected=\"selected\"");
+    }
+
+    [Fact]
+    public async Task Editing_is_blocked_while_an_activation_is_active()
+    {
+        var fixedShift = _factory.FixedShift;
+        var s = SeedReadyPlan("WizardEdit Active Plan", "Lima", fixedShift.Band, fixedShift.RosterDate);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var ctx = scope.ServiceProvider.GetRequiredService<ExecPlanDbContext>();
+            ctx.PlanActivations.Add(new PlanActivation
+            {
+                PlanId = s.PlanId,
+                Status = ActivationStatus.Active,
+                Shift = fixedShift.Band,
+                RosterDate = fixedShift.RosterDate,
+                ActivatedByUserId = _managerId,
+                ActivatedAtUtc = new DateTime(2026, 6, 30, 8, 0, 0, DateTimeKind.Utc),
+                EscalationThreshold = 5,
+            });
+            ctx.SaveChanges();
+        }
+
+        var client = WebTestHelpers.NewClient(_factory);
+        await WebTestHelpers.LoginAsync(client, ManagerUserName, Password);
+
+        // Server-side guard: any edit step redirects back to Detail instead of mutating a running plan.
+        var res = await client.GetAsync($"/admin/plans/create/{s.PlanId}/teams");
+        res.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        res.Headers.Location!.ToString().Should().Be($"/admin/plans/{s.PlanId}");
+
+        // And Detail hides the "Edit plan" entry point while the plan is active.
+        var detail = await client.GetStringAsync($"/admin/plans/{s.PlanId}");
+        detail.Should().NotContain($"/admin/plans/create/{s.PlanId}/info");
+    }
+
+    [Fact]
+    public async Task Removing_the_team_leader_clears_the_leader_reference()
+    {
+        // member2 is both a member AND the team leader; removing them must clear Team.TeamLeaderUserId so
+        // they don't retain leader-level authority (dashboard viewing, reassignment) over the team.
+        Guid planId, teamId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var ctx = scope.ServiceProvider.GetRequiredService<ExecPlanDbContext>();
+            var plan = new Plan { Name = "WizardEdit Leader Plan", Type = PlanType.Daily, Status = PlanStatus.Ready, CreatedByUserId = _managerId };
+            ctx.Plans.Add(plan);
+            ctx.SaveChanges();
+            var team = new Team { PlanId = plan.Id, Name = "Mike", TeamLeaderUserId = _member2Id };
+            ctx.Teams.Add(team);
+            ctx.SaveChanges();
+            ctx.TeamMemberships.Add(new TeamMembership { TeamId = team.Id, UserId = _member1Id });
+            ctx.TeamMemberships.Add(new TeamMembership { TeamId = team.Id, UserId = _member2Id });
+            ctx.SaveChanges();
+            planId = plan.Id;
+            teamId = team.Id;
+        }
+
+        var client = WebTestHelpers.NewClient(_factory);
+        await WebTestHelpers.LoginAsync(client, ManagerUserName, Password);
+
+        var url = $"/admin/plans/create/{planId}/teams";
+        var res = await WebTestHelpers.PostFormAsync(client, url, url, new Dictionary<string, string>
+        {
+            ["intent"] = "remove-member",
+            ["teamId"] = teamId.ToString(),
+            ["userId"] = _member2Id.ToString(),
+        });
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        using var scope2 = _factory.Services.CreateScope();
+        var ctx2 = scope2.ServiceProvider.GetRequiredService<ExecPlanDbContext>();
+        ctx2.Teams.First(t => t.Id == teamId).TeamLeaderUserId.Should().BeNull();
+    }
 }
